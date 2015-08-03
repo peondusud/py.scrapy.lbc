@@ -34,7 +34,7 @@ class LbcSpider(scrapy.Spider):
        lbc_page = LeboncoinItem()
        
        lbc_page['doc_category'] = response.url.split("/")[3]
-       lbc_page['doc_id'] = response.url.split("/")[-1].split(".htm")[0]
+       lbc_page['doc_id'] = int(response.url.split("/")[-1].split(".htm")[0])
        lbc_page['doc_url'] = response.url
 
        
@@ -63,14 +63,20 @@ class LbcSpider(scrapy.Spider):
        upload = content2.xpath('div[@class="upload_by"]')
        #upload = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]')
        lbc_page['user_url'] = upload.xpath('a/@href').extract()[0] 
-       lbc_page['user_id'] =  lbc_page['user_url'].split("id=")[1]
+       lbc_page['user_id'] =  int(lbc_page['user_url'].split("id=")[1])
        lbc_page['user_name'] = upload.xpath('a/text()').extract()[0] 
        lbc_page['upload_date'] = "".join(upload.xpath('text()').extract()).strip().replace("- Mise en ligne le ","").replace(u"à ","").replace(".","")
 
        tmp =  content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td')
        try:
            lbc_page['price_currency'] = tmp.xpath('meta/@content').extract()[0]
-           lbc_page['price'] = tmp.xpath('span[@class="price"]/@content').extract()[0]
+           lbc_page['price'] = int(tmp.xpath('span[@class="price"]/@content').extract()[0])
+           lbc_page['urgent'] = tmp.xpath('span[@class="urgent"]/text()').extract()
+           if lbc_page['urgent']:
+               lbc_page['urgent'] = 1
+           else:
+               lbc_page['urgent'] = 0
+	
        except IndexError:
            pass
 
@@ -82,12 +88,15 @@ class LbcSpider(scrapy.Spider):
        except IndexError:
            pass
 
-       
-       geo_coords = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]')
-       latitude = geo_coords.xpath('//meta[@itemprop="latitude"]/@content').extract()[0]
-       longitude = geo_coords.xpath('//meta[@itemprop="longitude"]/@content').extract()[0]
-       location = [longitude, latitude]
-       lbc_page['location'] = location
+       try:
+           geo_coords = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]')
+           latitude = geo_coords.xpath('//meta[@itemprop="latitude"]/@content').extract()[0]
+           longitude = geo_coords.xpath('//meta[@itemprop="longitude"]/@content').extract()[0]
+           location = [longitude, latitude]
+           lbc_page['location'] = map( float, location)
+       except IndexError:
+           pass
+
 
        criterias = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table//tr')
        
