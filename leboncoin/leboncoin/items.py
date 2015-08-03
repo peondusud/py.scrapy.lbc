@@ -9,8 +9,24 @@ import scrapy
 
 
 class LeboncoinItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
+    doc_id = scrapy.Field()
+    doc_url = scrapy.Field()
+    doc_category = scrapy.Field()
     title = scrapy.Field()
-    link = scrapy.Field()
+    img_urls = scrapy.Field()
+    user_url = scrapy.Field()
+    user_id = scrapy.Field()
+    user_name = scrapy.Field()
+    upload_date = scrapy.Field()
+
+    price_currency = scrapy.Field()
+    price = scrapy.Field()
+
+    region = scrapy.Field()
+    addr_locality = scrapy.Field()
+    postal_code = scrapy.Field()
+    location = scrapy.Field()
+
+    criterias = scrapy.Field()
+
     desc = scrapy.Field()
