@@ -2,4 +2,6 @@
 LBC crawler using scrapy
 
 cd leboncoin/
-scrapy crawl lbc
+
+
+scrapy crawl lbc -o output.json

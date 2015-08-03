@@ -21,6 +21,7 @@ class LeboncoinItem(scrapy.Item):
 
     price_currency = scrapy.Field()
     price = scrapy.Field()
+    urgent = scrapy.Field()
 
     region = scrapy.Field()
     addr_locality = scrapy.Field()

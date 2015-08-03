@@ -8,10 +8,8 @@ class LbcSpider(scrapy.Spider):
     name = "lbc"
     allowed_domains = ["leboncoin.fr"]
     start_urls = (
-        #'http://www.leboncoin.fr/utilitaires/837117373.htm',
-        #'http://www.leboncoin.fr/informatique/837420855.htm',
-        'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/?f=a&th=1',
-        #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/?o=2',
+        'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/',
     )
 
     def parse(self, response):
