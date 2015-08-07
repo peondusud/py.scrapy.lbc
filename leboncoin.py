@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# -- coding: utf-8 --
 
 
 import os
@@ -42,6 +43,14 @@ def fetch():
     
 
     tree = html.fromstring( r.text )
+   
+    #test = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]')
+    #print dir(test))
+
+    content_urls = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
+    #content_urls = test.xpath('div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
+    print content_urls
+
     prev_nxt_url = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]/a/@href')
     next_url = prev_nxt_url[-1]
     nb_page = next_url.split("?o=")[-1]
@@ -50,13 +59,46 @@ def fetch():
     print nb_page
 
     check_domain(next_url)
+    
+    parse(content_urls)
 
-def parse():
-    pass
+
+def parse(urls):
+    for url in urls:
+        doc_category = url.split("/")[3]
+        doc_id = int(url.split("/")[-1].split(".htm")[0])
+        doc_url = url 
+
+        check_domain(url)
+        page = requests.get( url )            
+        tree = html.fromstring( page.text )
+        title = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')[0]
+        print title
 
 
-def inject_to_DB():
-    pass
+        tmp = tree.xpath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')    
+        
+        try:
+            region = tmp[1]
+            doc_category = tmp[2]
+        except IndexError:
+             pass
+
+        img_urls = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]/meta/@content')
+        print img_urls
+
+        user_url = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/@href')[0]
+        user_id = int( user_url.split("id=")[1] )
+        user_name = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/text()')[0]
+        
+        upload_date = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/text()')
+        upload_date = "".join( upload_date ).strip()
+        upload_date = upload_date.replace("- Mise en ligne le ","")
+        upload_date = upload_date.replace("à ","")
+        upload_date = upload_date.replace(".","")
+
+        print user_url, user_name , upload_date
+
 
 
 def update_DB():
