@@ -17,6 +17,8 @@ class LeboncoinItem(scrapy.Item):
     user_url = scrapy.Field()
     user_id = scrapy.Field()
     user_name = scrapy.Field()
+    user_pro = scrapy.Field() 
+    user_pro_siren = scrapy.Field()
     upload_date = scrapy.Field()
 
     price_currency = scrapy.Field()
