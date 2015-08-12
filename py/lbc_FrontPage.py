@@ -15,18 +15,28 @@ import threading
 class FrontPage(threading.Thread):
 
     def __init__(self, q_front_urls , q_doc_urls):
+        self._logger = logging.getLogger(__name__)
+
         #super().__init__(group=None) #FIXME
         #super().__init__(self) #FIXME
         threading.Thread.__init__(self) #FIXME
-        self._logger = logging.getLogger(__name__)
+        #threading.Thread.__init__(group=None, target=self.run() ) #FIXME
+
         self._q_front_urls = q_front_urls
+        self._logger.debug("_q_front_urls created" )
+
         self._q_doc_urls = q_doc_urls
+        self._logger.debug("_q_doc_urls created" )
+
         self._session = requests.session()
+        self._logger.debug("_session created" )
+
         self._run = false
 
     def worker(self ):
         try:
             url2fetch = self._q_front_urls.get(block=True, timeout=1.0)
+            self._logger.debug("_session created" )
         except queue.Empty:
             self._logger.debug(" self.url2fetch queue Empty:" )
             return

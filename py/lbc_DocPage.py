@@ -16,10 +16,13 @@ from lbc_FrontPage import *
 class DocPage(threading.Thread):
 
     def __init__(self, q_doc_urls, q_documents ):
+        self.logger = logging.getLogger(__name__)
+        
         #super().__init__(group=None) #FIXME
         #super().__init__(self) #FIXME
         threading.Thread.__init__(self) #FIXME
-        self.logger = logging.getLogger(__name__)
+        #threading.Thread.__init__(group=None, target=self.run() ) #FIXME
+
         self.docUrl_to_fetch = ""
         try:
             self.docUrl_to_fetch = q_doc_urls.get()
