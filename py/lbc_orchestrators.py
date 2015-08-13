@@ -9,7 +9,7 @@ import logging
 
 import requests
 from urllib.parse import urlparse
-from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
+from lxml import html     #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
 import queue
 from collections import namedtuple

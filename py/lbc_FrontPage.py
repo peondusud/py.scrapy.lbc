@@ -12,15 +12,15 @@ from collections import namedtuple
 import threading
 
 
+allow_domains = [ "leboncoin.fr" ]
+
 class FrontPage(threading.Thread):
 
     def __init__(self, q_front_urls , q_doc_urls):
         self._logger = logging.getLogger(__name__)
 
         #super().__init__(group=None) #FIXME
-        #super().__init__(self) #FIXME
-        threading.Thread.__init__(self) #FIXME
-        #threading.Thread.__init__(group=None, target=self.run() ) #FIXME
+        super().__init__() #FIXME
 
         self._q_front_urls = q_front_urls
         self._logger.debug("_q_front_urls created" )
@@ -31,7 +31,7 @@ class FrontPage(threading.Thread):
         self._session = requests.session()
         self._logger.debug("_session created" )
 
-        self._run = false
+        self._event = threading.Event()
 
     def worker(self ):
         try:
@@ -44,14 +44,14 @@ class FrontPage(threading.Thread):
         page = self.fetch(url2fetch)
         self._logger.debug( "page ",  page)
         if (page is not None ) or  (not page) :
-            self.scrap()
+            self._logger.debug("page No empty" )
+            self.scrap(page)
         else:
-            self.logger.error( "self.page empty or None" )
+            self.logger.error( "page empty or None" )
 
     def fetch(self, url2fetch):
 
-        s = requests.session()
-        r = s.get( url2fetch  , timeout=0.01)
+        r = self._session.get( url2fetch  , timeout=0.3)
         self._logger.debug("Handling request ", url2fetch)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -62,10 +62,10 @@ class FrontPage(threading.Thread):
 
         self.tree = html.fromstring( page )
 
-        self.get_docUrls_fromTree(tree)
+        self.get_docUrls_fromTree( self.tree )
         self.add_Queue_DocUrls()
 
-        self.get_nextUrl_fromTree(tree)
+        self.get_nextUrl_fromTree(self.tree )
         self.add_nextFrontPageUrl()
 
     def get_docUrls_fromTree(self , tree):
@@ -84,7 +84,7 @@ class FrontPage(threading.Thread):
 
     def add_Queue_nextFrontPageUrl(self, next_url):
         #verify in allow_domain
-        if url_isAllow( next_url):
+        if self.url_isAllow( next_url):
             #add to queue new front page url
             try:
                 self._logger.debug( "Try Add to q_front_urls", next_url )
@@ -95,7 +95,7 @@ class FrontPage(threading.Thread):
     def add_Queue_DocUrls(self,content_urls):
         #add doc url to doc queue
         for page_url in content_urls:
-            if  url_isAllow( page_url ):
+            if  self.url_isAllow( page_url ):
                 self._logger.debug( page_url, "is an Allow URL" )
 
                 try:
@@ -115,16 +115,16 @@ class FrontPage(threading.Thread):
 
 
     def start(self):
-        self._run = True
+        self._event.set()
         super().start()
 
     def stop(self):
-        self._run = False
+        self._event.clear()
         super().stop()
 
     def run(self):
-        self._run = true
-        while self._run:
+
+        while self._event.is_set():
             try:
                 self.worker()
             except Exception as e:

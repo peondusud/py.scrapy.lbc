@@ -17,22 +17,14 @@ class DocPage(threading.Thread):
 
     def __init__(self, q_doc_urls, q_documents ):
         self.logger = logging.getLogger(__name__)
-        
-        #super().__init__(group=None) #FIXME
-        #super().__init__(self) #FIXME
-        threading.Thread.__init__(self) #FIXME
-        #threading.Thread.__init__(group=None, target=self.run() ) #FIXME
+
+        super().__init__() #FIXME
 
         self.docUrl_to_fetch = ""
-        try:
-            self.docUrl_to_fetch = q_doc_urls.get()
-        except queue.Empty:
-            self.logger.debug(" self.docUrl_to_fetch queue Empty:" )
-
         self.q_doc_urls = q_doc_urls
         self.q_documents = q_documents
-        self.session = requests.session()
-        self._run = False
+        self._session = requests.session()
+        self._event = threading.Event()
 
 
     def worker(self ):
@@ -44,7 +36,12 @@ class DocPage(threading.Thread):
             self.logger.error( "self.page empty or None" )
 
     def fetch(self):
-        reponse = self.session.get( self.docUrl_to_fetch , timeout=0.01)
+        try:
+            self.docUrl_to_fetch = self.q_doc_urls.get()
+            self.logger.debug(" self.docUrl_to_fetch :{}".format( self.cUrl_to_fetch  ) )
+        except queue.Empty:
+            self.logger.debug(" self.docUrl_to_fetch queue Empty:" )
+        reponse = self._session.get( self.docUrl_to_fetch , timeout=1)
         self.logger.debug("Handling request ", self.url2fetch)
         if reponse .status_code != requests.codes.ok:
             reponse .raise_for_status()
@@ -65,16 +62,16 @@ class DocPage(threading.Thread):
             self.logger.debug(" self.q_doc_url queue Full:" )
 
     def start(self):
-        self._run = True
+        self._event.set()
         super().start()
 
     def stop(self):
-        self._run = False
+        self._event.clear()
         super().stop()
 
     def run(self):
 
-        while self._run:
+        while self._event.is_set():
             try:
                 self.worker()
             except Exception as e:
