@@ -6,6 +6,7 @@
 import os
 import sys
 import logging
+from colorama import Fore, Back, Style
 
 import requests
 from urllib.parse import urlparse
@@ -35,31 +36,31 @@ class LBC_Orchestrator():
     def __init__(self):
         self._logger = logging.getLogger(__name__)
         self._q_docPageUrls = queue.Queue()
-        self._logger.debug(" _q_docPageUrls  created" )
+        self._logger.debug("LBC_Orchestrator _q_docPageUrls  created" )
         self._q_documents = queue.Queue()
-        self._logger.debug("_q_documents  created" )
+        self._logger.debug("LBC_Orchestrator _q_documents  created" )
 
-        self._logger.debug("BDD_orchestrator initialize" )
+        self._logger.debug("LBC_Orchestrator BDD_orchestrator initialize" )
         self._bdd_center = BDD_orchestrator( self._q_documents)
-        self._logger.debug("BDD_orchestrator initialized" )
+        self._logger.debug("LBC_Orchestrator BDD_orchestrator initialized" )
 
-        self._logger.debug("DocPage_orchestrator initialize" )
+        self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialize" )
         self._docPage_center = DocPage_orchestrator(self._q_docPageUrls, self._q_documents)
-        self._logger.debug("DocPage_orchestrator initialized" )
+        self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialized" )
 
-        self._logger.debug("FrontPage_orchestrator initialize" )
+        self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialize" )
         self._frontPage_center = FrontPage_orchestrator( self._q_docPageUrls)
-        self._logger.debug("FrontPage_orchestrator initialized" )
+        self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialized" )
 
 
     def run(self):
-        self._logger.debug("Launch _bdd_center.run()" )
+        self._logger.debug("LBC_Orchestrator Launch _bdd_center.run()" )
         self._bdd_center.run()
 
-        self._logger.debug("Launch _docPage_center.run()" )
+        self._logger.debug("LBC_Orchestrator Launch _docPage_center.run()" )
         self._docPage_center.run()
 
-        self._logger.debug("Launch _frontPage_center.run()" )
+        self._logger.debug("LBC_Orchestrator Launch _frontPage_center.run()" )
         self._frontPage_center.run()
 
 
@@ -70,13 +71,14 @@ class BDD_orchestrator():
         self._logger = logging.getLogger(__name__)
 
         self._q_documents = q_documents
-        self._logger.debug("self._q_documents  created" )
+        self._logger.debug("BDD_orchestrator self._q_documents  created" )
 
-        self._logger.debug("BDD_file  initialize" )
+        self._logger.debug("BDD_orchestrator BDD_file  initialize" )
         self._bdd_process = BDD_file( self._q_documents )
 
     def run(self):
-        self._bdd_process.run()
+        self._logger.debug("BDD_orchestrator BDD_file  in run()" )
+        self._bdd_process.start()
 
 
 class DocPage_orchestrator():
@@ -87,7 +89,7 @@ class DocPage_orchestrator():
 
         self._q_documents = q_documents
         self._logger.debug("_q_documents created" )
-        nb_concurent_documentScraper = 16
+        nb_concurent_documentScraper = 4
         #equals Nmber of concuremnt connection
         # Same nb_Thread_DocPage = 4
         self.pool_DocPageWorkers = []
@@ -117,9 +119,9 @@ class FrontPage_orchestrator():
 
         for start_url in start_urls:
             try:
-                self._q_frontPageUrls.put(start_url)
+                self._q_frontPageUrls.put(start_url, block=True, timeout=None)
             except queue.Full:
-                self.logger.debug(" self.q_frontPageUrls queue Full:" )
+                self.logger.debug(" self.q_frontPageUrls queue Full" )
         nb_Thread_FrontPage = self._q_frontPageUrls.qsize()
 
         self._logger.debug("initialize pool_FrontWorkers" )
@@ -136,17 +138,15 @@ class FrontPage_orchestrator():
 
 
 
-
-
-
-
 def stats():
     pass
 
 if __name__ == '__main__':
+    logger = logging.getLogger(__name__)
 
-    #logging.basicConfig(level=logging.INFO)
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(level=logging.DEBUG)
 
     lbc_center = LBC_Orchestrator()
     lbc_center.run()
+    logger.debug(" all running" )
