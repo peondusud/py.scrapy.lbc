@@ -89,7 +89,7 @@ class DocPage_orchestrator():
 
         self._q_documents = q_documents
         self._logger.debug("_q_documents created" )
-        nb_concurent_documentScraper = 4
+        nb_concurent_documentScraper = 1
         #equals Nmber of concuremnt connection
         # Same nb_Thread_DocPage = 4
         self.pool_DocPageWorkers = []
@@ -144,8 +144,10 @@ def stats():
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
-    logging.basicConfig(level=logging.INFO)
+
     #logging.basicConfig(level=logging.DEBUG)
+
+    logging.basicConfig(filename="lbc.log", level=logging.DEBUG)
 
     lbc_center = LBC_Orchestrator()
     lbc_center.run()

@@ -41,43 +41,46 @@ class FrontPage(threading.Thread):
         'Connection' : 'keep-alive' }
         self._session = requests.session()
         self._session.headers.update( headers )
-        print( self._session.headers.items()  )
+        self._logger.info("Init Session Headers : {}".format( self._session.headers )  )
         self._logger.debug("_session created" )
 
         self._event = threading.Event()
 
     def worker(self ):
         try:
-            url2fetch = self._q_front_urls.get(block=True, timeout=None)
-            self._logger.info( Fore.BLUE + "FRONT URL to Fetch : {}".format( url2fetch ) + Fore.RESET )
+            frontPage_url = self._q_front_urls.get(block=True, timeout=None)
+            self._logger.info( Fore.BLUE + "FRONT URL to Fetch : {}".format( frontPage_url ) + Fore.RESET )
 
         except queue.Empty:
-            self._logger.debug(" self.url2fetch queue Empty" )
+            self._logger.debug(" self.frontPage_url queue Empty" )
             return
 
-        page = self.fetch(url2fetch)
+        page = self.fetch( frontPage_url )
         #self._logger.debug( "page {}".format( page ))
         if (page is not None ) or  (not page) :
             self._logger.debug("page No empty" )
             self.scrap(page)
         else:
-            self.logger.error( "page empty or None" )
+            self._logger.error( "page empty or None" )
 
-    def fetch(self, url2fetch):
+    def fetch(self, frontPage_url):
 
-        r = self._session.get( url2fetch  , timeout=2)
-        self._logger.debug("Handling request {}".format( url2fetch) )
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-        return r.text
+        self._logger.info( "Fetch session cookies Before web request : {}".format( self._session.cookies.items() )  )
+        self._logger.debug("Handling request : {}".format( frontPage_url) )
+        response = self._session.get( frontPage_url , timeout=3)
+        #response = requests.get( self.docPage_url , timeout=None) #FIXME
+        self._logger.info( "Fetch session cookies After web request : {}".format( self._session.cookies.items() )  )
+        if response.status_code != requests.codes.ok:
+            response.raise_for_status()
+        #self._logger.info( "Fetch headers sent to server : {}".format( response.request.headers)  )
+        #self._logger.info( "Fetch headers sent from server : {}".format( response.headers)  )
+        return response .text
 
 
     def scrap(self, page):
 
         self.tree = html.fromstring( page )
-
         self.get_docUrls_fromTree( self.tree )
-
         self.get_nextUrl_fromTree(self.tree )
 
     def get_docUrls_fromTree(self , tree):

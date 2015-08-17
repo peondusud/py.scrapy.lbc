@@ -9,7 +9,7 @@ import threading
 from colorama import Fore, Back, Style
 
 from lbc_FrontPage import *
-
+from lbc_items import *
 
 
 class BDD_file(threading.Thread):
@@ -37,25 +37,25 @@ class BDD_file(threading.Thread):
         self._logger.debug( Fore.GREEN + "BDD_file in worker" + Fore.RESET )
         with open("/home/peon/py.scrapy.lbc/py/lbc.json", 'w') as f:
             while 1:
-                self._logger.debug( Fore.GREEN + "BDD_file in worker while1" + Fore.RESET )
 
-                self._logger.info(  Fore.GREEN + "BDD_file in worker aaaaaaaa{}".format( self._q_documents.qsize() ) + Fore.RESET )
+                self._logger.info(  Fore.GREEN + "Worker while1 loop q_documents.qsize : {}".format( self._q_documents.qsize() ) + Fore.RESET )
                 if self._q_documents.qsize() > nb_doc:
-                    self._logger.info(  Fore.GREEN + "BDD_file in worker {}".format( self._q_documents.qsize() ) + Fore.RESET )
-
+                    self._logger.info(  Fore.GREEN + "Worker enter if condition q_documents.qsize :{}".format( self._q_documents.qsize() ) + Fore.RESET )
                     f.write( "\n".join(bulk) )
                     bulk = []
+
                 try:
                     document = self._q_documents.get(block=True, timeout=None)
+                    self._logger.info( Fore.GREEN + "Worker loop document {}".format( document ) + Fore.RESET)
                     document_json = document.json_it()
                     bulk.append( document_json )
                 except queue.Empty:
-                    self._logger.debug(Fore.GREEN + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
-                    self._logger.info(Fore.GREEN + "Finished or stopped DocPage loop" + Fore.RESET)
-                self._logger.info(Fore.GREEN + "sleep 1" + Fore.RESET)
-                time.sleep(1)#FIXME
-        f.close()
-        self.logger.info(Fore.GREEN + "Finished or stopped DocPage loop"+ Fore.RESET)
+                    self._logger.debug( Fore.GREEN + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
+
+                self._logger.info(Fore.GREEN + "Worker sleep 1" + Fore.RESET)
+                time.sleep(1) #FIXME
+
+        self._logger.info(Fore.GREEN + "Finished or stopped BDD_file loop"+ Fore.RESET)
 
 
     def run(self):

@@ -179,8 +179,8 @@ class LeboncoinItem():
         #self._document_Criterias = document_Criterias_factory(tree)  #FIXME
         #self._document_Announcement = document_Announcement_factory(tree)
 
-        def json_it(self):
-            return "LeboncoinItem"
+    def json_it(self):
+        return "LeboncoinItem"
 
 
 
