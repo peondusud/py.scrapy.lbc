@@ -86,8 +86,12 @@ class FrontPage(threading.Thread):
     def get_docUrls_fromTree(self , tree):
         # retrieve 25 elems doc page url
         content_urls = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
-        self.add_Queue_DocUrls( content_urls )
+        #remove shity parameter in content_urls
+        wipe_url = lambda x : x.split("?")[0]
+        content_urls_wipe = list(map(wipe_url, content_urls))
+        self.add_Queue_DocUrls( content_urls_wipe )
         self._logger.debug( "content_urls : {}".format( content_urls ))
+        self._logger.debug( "content_urls_wipe : {}".format( content_urls_wipe ))
 
     def get_nextUrl_fromTree(self, tree):
         prev_nxt_url = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]/a/@href')

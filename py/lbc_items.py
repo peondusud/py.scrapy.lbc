@@ -209,20 +209,18 @@ class LeboncoinItem():
         self._dict.update( dict( document_Uploader.__dict__) )
         self._dict.update( dict( document_Localisation.__dict__) )
         self._dict.update( dict( document_Price.__dict__) )
-        self._dict.update( dict( document_Criterias.__dict__) )
+
+        #return only the value (containing a dict)
+        self._dict.update( dict( document_Criterias.__dict__["criterias_dict"]) )
 
         #remove empty key
         for remove_key in [k for k,v in self._dict.items() if v is '']:
             self._logger.debug("Remove key empty {}".format(remove_key) )
             self._dict.pop(key)
 
-
         #print ( self._dict)
 
-
-
     def json_it(self):
-
         return json.dumps( self._dict )
 
 
