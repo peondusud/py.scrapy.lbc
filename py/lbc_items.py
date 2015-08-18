@@ -2,6 +2,7 @@
 
 import logging
 import json
+import re
 from collections import namedtuple
 
 Document_Identifier = namedtuple( "Document_Identifier", [ "doc_url", "doc_id", "doc_category" ])
@@ -62,8 +63,8 @@ def document_uploader_factory( tree ):
     uploader_id = ""
     uploader_name = ""
     upload_date = ""
-    uploader_ispro = 0      #FIXME
-    uploader_pro_siren= ""  #FIXME
+    uploader_ispro = 0
+    uploader_pro_siren = ""
 
     uploader_url = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/@href')[0]
     logger.debug( "document_uploader_factory uploader_url {}".format( uploader_url ) )
@@ -76,6 +77,11 @@ def document_uploader_factory( tree ):
 
     upload_date = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/text()')
     upload_date = "".join( upload_date ).strip()
+
+    matchObj = re.match( "Numéro Siren : (\d{9})\s+?-", upload_date )
+    if matchObj is not None:
+        uploader_pro_siren = matchObj.group(1)
+        uploader_ispro = 1
     upload_date = upload_date.replace("- Mise en ligne le ","")
     upload_date = upload_date.replace(u"à ","")
     upload_date = upload_date.replace(".","")
@@ -88,7 +94,7 @@ def document_price_factory(tree):
     price = ""
 
     try:
-        price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')
+        price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')[0]
         price = int(tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')[0] )
         urgent = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
         if urgent:
@@ -150,18 +156,33 @@ def document_localisation_factory(tree):
     logger.debug( "document_localisation_factor location  {}".format( location ))
     return Document_Localisation( addr_locality, postal_code ,location )
 
-def document_criterias_factory(tree):
+def document_criterias_factory( tree ):
     logger = logging.getLogger(__name__)
     criterias_dict = dict()
-    """ #FIXME
-    criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table//tr')
-           for row in criterias:
-               header = u"".join( map(lambda x: x.strip().replace(" :","") ,row.xpath('th/text()').extract()))
-               value =  u"".join( map(lambda x: x.strip(), row.xpath('td/text()').extract()))
-               if not value:
-                   value = u"".join(row.xpath('td//a/text()').extract())
-               criterias_dict[header] = value
-    """
+
+    # /html/body/div/div[2]/div/div[3]
+    # div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]
+    # div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table//tr
+    criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
+    #criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
+
+    for tr in criterias:
+        header = tr.xpath('th/text()')[0]
+        header = header.split(" : ")[0]
+        header = header.split(" :")[0]
+        value = tr.xpath('td/text()')
+        try:
+            value = value[0]
+        except IndexError as e:
+            logger.debug( "document_criterias_factory IndexError" )
+
+        if not value:
+            value = tr.xpath('td/a/text()')
+
+        criterias_dict[header] = value
+        #criterias_dict.update({ header : value })
+        print (header , value)
+
     logger.debug( "document_criterias_factory criterias_dict  {}".format( criterias_dict ))
     return Document_Criterias( criterias_dict )
 
@@ -170,17 +191,39 @@ def document_criterias_factory(tree):
 class LeboncoinItem():
 
     def __init__(self, url, tree):
+        self._logger = logging.getLogger(__name__)
+        document_Identifier = document_identifier_factory( url )
+        document_Category = document_category_factory( tree )
+        document_Uploader = document_uploader_factory( tree )
+        document_Localisation = document_localisation_factory( tree )
+        document_Price = document_price_factory( tree )
 
-        self._document_Identifier = document_identifier_factory( url )
-        self._document_Category = document_category_factory( tree )
-        self._document_Uploader = document_uploader_factory(tree)
-        self._document_Localisation = document_localisation_factory(tree)
+        document_Criterias = document_criterias_factory( tree )
 
-        #self._document_Criterias = document_Criterias_factory(tree)  #FIXME
-        #self._document_Announcement = document_Announcement_factory(tree)
+        #FIXME 'key' is not defined DocPage loop
+
+        #return OrdereDict  _document_Identifier._asdict()
+        #return OrdereDict  _document_Identifier.__dict__
+        self._dict =  dict( document_Identifier.__dict__ )
+        self._dict.update( dict( document_Category.__dict__) )
+        self._dict.update( dict( document_Uploader.__dict__) )
+        self._dict.update( dict( document_Localisation.__dict__) )
+        self._dict.update( dict( document_Price.__dict__) )
+        self._dict.update( dict( document_Criterias.__dict__) )
+
+        #remove empty key
+        for remove_key in [k for k,v in self._dict.items() if v is '']:
+            self._logger.debug("Remove key empty {}".format(remove_key) )
+            self._dict.pop(key)
+
+
+        #print ( self._dict)
+
+
 
     def json_it(self):
-        return "LeboncoinItem"
+
+        return json.dumps( self._dict )
 
 
 

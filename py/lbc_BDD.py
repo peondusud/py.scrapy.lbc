@@ -32,7 +32,7 @@ class BDD_file(threading.Thread):
 
 
     def worker(self):
-        nb_doc = 1
+        nb_doc = 10
         bulk = []
         self._logger.debug( Fore.GREEN + "BDD_file in worker" + Fore.RESET )
         with open("/home/peon/py.scrapy.lbc/py/lbc.json", 'w') as f:
@@ -48,6 +48,7 @@ class BDD_file(threading.Thread):
                     document = self._q_documents.get(block=True, timeout=None)
                     self._logger.info( Fore.GREEN + "Worker loop document {}".format( document ) + Fore.RESET)
                     document_json = document.json_it()
+                    self._logger.info( Fore.GREEN + "Worker loop document_json {}".format( document ) + Fore.RESET)
                     bulk.append( document_json )
                 except queue.Empty:
                     self._logger.debug( Fore.GREEN + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )

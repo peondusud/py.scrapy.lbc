@@ -24,8 +24,9 @@ from lbc_BDD import *
 
 start_urls = (
         #'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/',
-        #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/',
-        'http://www.leboncoin.fr/_multimedia_/offres/ile_de_france/occasions/',
+        'http://www.leboncoin.fr/ventes_immobilieres/offres/ile_de_france/', #debug criterias
+        #'http://www.leboncoin.fr/_multimedia_/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/informatique/offres/ile_de_france/occasions/?f=c', #debug pro
     )
 
 

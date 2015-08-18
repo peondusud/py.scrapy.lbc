@@ -76,8 +76,8 @@ class DocPage(threading.Thread):
     def scrap(self):
 
         tree = html.fromstring( self.page )
-        lbc_item = LeboncoinItem(self.docPage_url, tree)
-        self._logger.debug( "scrap lbc_item :".format( dir( lbc_item ) ) )
+        lbc_item = LeboncoinItem( self.docPage_url, tree)
+        #self._logger.debug( "scrap lbc_item :".format( ( lbc_item ) ) )
         self.add_Queue_Documents( lbc_item )
 
 
