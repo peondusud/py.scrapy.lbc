@@ -167,21 +167,32 @@ def document_criterias_factory( tree ):
     #criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
 
     for tr in criterias:
-        header = tr.xpath('th/text()')[0]
-        header = header.split(" : ")[0]
-        header = header.split(" :")[0]
+        header = tr.xpath('th/text()')
+        try:
+            header = header[0]
+            header = header.split(" : ")[0]
+            header = header.split(" :")[0]
+        except IndexError as e:
+            logger.debug( "document_criterias_factory header IndexError" )
+
         value = tr.xpath('td/text()')
         try:
             value = value[0]
+            value = value.strip()
         except IndexError as e:
-            logger.debug( "document_criterias_factory IndexError" )
+            logger.debug( "document_criterias_factory value IndexError" )
 
         if not value:
-            value = tr.xpath('td/a/text()')
+            value = tr.xpath('td/noscript/a/text()')
+            logger.debug( "document_criterias_factory value links : ---{}----".format(value) )
+            try:
+                value = value[0]
+            except IndexError as e:
+                logger.debug( "document_criterias_factory value links IndexError" )
 
         criterias_dict[header] = value
         #criterias_dict.update({ header : value })
-        print (header , value)
+        logger.debug( "document_criterias_factory {} : _{}_".format( header , value ))
 
     logger.debug( "document_criterias_factory criterias_dict  {}".format( criterias_dict ))
     return Document_Criterias( criterias_dict )

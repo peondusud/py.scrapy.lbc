@@ -15,6 +15,7 @@ from lxml import html     #apt-get install libxml2-dev libxslt-dev python-dev li
 import queue
 from collections import namedtuple
 import threading
+import itertools
 #from multiprocessing import Process, Value, Array, Pool
 
 from lbc_FrontPage import *
@@ -64,7 +65,17 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.run()" )
         self._frontPage_center.run()
 
+    def stats(self):
+        Thread.start_new_thread(updateStatistics , (self._q_documents , self._bdd_center ) )
 
+    def updateStatistics(queue_doc, bdd_center):
+        start_time = time.time()
+
+        last_value = 0
+        while 1:
+            now = time.time()
+            nb_docs_saved = self._bdd_center._bdd_thread._nb_object_saved
+            time.sleep(60)
 
 
 class BDD_orchestrator():
@@ -75,11 +86,11 @@ class BDD_orchestrator():
         self._logger.debug("BDD_orchestrator self._q_documents  created" )
 
         self._logger.debug("BDD_orchestrator BDD_file  initialize" )
-        self._bdd_process = BDD_file( self._q_documents )
+        self._bdd_thread = BDD_file( self._q_documents )
 
     def run(self):
         self._logger.debug("BDD_orchestrator BDD_file  in run()" )
-        self._bdd_process.start()
+        self._bdd_thread.start()
 
 
 class DocPage_orchestrator():
@@ -139,8 +150,7 @@ class FrontPage_orchestrator():
 
 
 
-def stats():
-    pass
+
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
