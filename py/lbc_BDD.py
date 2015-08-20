@@ -33,7 +33,7 @@ class BDD_file(threading.Thread):
 
 
     def worker(self):
-        nb_doc = 100
+        nb_doc = 10
 
         self._logger.debug( Fore.RED + "BDD_file in worker" + Fore.RESET )
         with open("/home/peon/py.scrapy.lbc/py/lbc.json", 'w+') as f:
@@ -49,6 +49,7 @@ class BDD_file(threading.Thread):
                     f.write( "\n".join(bulk) )
                     f.flush()
                     bulk = []
+                    self._logger.info(  Fore.RED + "Worker write  {} documents".format( nb_doc ) + Fore.RESET )
                     self._nb_object_saved += nb_doc
 
                 try:

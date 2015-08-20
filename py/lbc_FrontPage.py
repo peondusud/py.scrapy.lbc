@@ -41,7 +41,7 @@ class FrontPage(threading.Thread):
         'Connection' : 'keep-alive' }
         self._session = requests.session()
         self._session.headers.update( headers )
-        self._logger.info("Init Session Headers : {}".format( self._session.headers )  )
+        self._logger.debug("Init Session Headers : {}".format( self._session.headers )  )
         self._logger.debug("_session created" )
 
         self._event = threading.Event()
@@ -65,15 +65,15 @@ class FrontPage(threading.Thread):
 
     def fetch(self, frontPage_url):
 
-        self._logger.info( "Fetch session cookies Before web request : {}".format( self._session.cookies.items() )  )
+        self._logger.debug( "Fetch session cookies Before web request : {}".format( self._session.cookies.items() )  )
         self._logger.debug("Handling request : {}".format( frontPage_url) )
         response = self._session.get( frontPage_url , timeout=3)
         #response = requests.get( self.docPage_url , timeout=None) #FIXME
-        self._logger.info( "Fetch session cookies After web request : {}".format( self._session.cookies.items() )  )
+        self._logger.debug( "Fetch session cookies After web request : {}".format( self._session.cookies.items() )  )
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        #self._logger.info( "Fetch headers sent to server : {}".format( response.request.headers)  )
-        #self._logger.info( "Fetch headers sent from server : {}".format( response.headers)  )
+        #self._logger.debug( "Fetch headers sent to server : {}".format( response.request.headers)  )
+        #self._logger.debug( "Fetch headers sent from server : {}".format( response.headers)  )
         return response .text
 
 

@@ -39,7 +39,7 @@ class DocPage(threading.Thread):
         'Connection' : 'keep-alive' }
         self._session = requests.session()
         self._session.headers.update( headers )
-        self._logger.info("Init Session Headers : {}".format( self._session.headers )  )
+        self._logger.debug("Init Session Headers : {}".format( self._session.headers )  )
         self._logger.debug("_session created" )
 
         self._event = threading.Event()
@@ -61,11 +61,11 @@ class DocPage(threading.Thread):
         except queue.Empty:
             self._logger.debug("Fetch self.docPage_url queue Empty:" )
 
-        self._logger.info( "Fetch session cookies Before web request : {}".format( self._session.cookies.items())  )
+        self._logger.debug( "Fetch session cookies Before web request : {}".format( self._session.cookies.items())  )
         self._logger.debug("Handling request {}".format( self.docPage_url ) )
         #response = self._session.get( self.docPage_url , timeout=3)
         response = requests.get( self.docPage_url , timeout=None) #FIXME connection reset
-        self._logger.info( "Fetch session cookies after web request : {}".format( self._session.cookies.items())  )
+        self._logger.debug( "Fetch session cookies after web request : {}".format( self._session.cookies.items())  )
 
         if response .status_code != requests.codes.ok:
             response .raise_for_status()
@@ -77,7 +77,7 @@ class DocPage(threading.Thread):
 
         tree = html.fromstring( self.page )
         lbc_item = LeboncoinItem( self.docPage_url, tree)
-        #self._logger.debug( "scrap lbc_item :".format( ( lbc_item ) ) )
+        self._logger.debug( "scrap lbc_item :".format( ( lbc_item ) ) )
         self.add_Queue_Documents( lbc_item )
 
 
@@ -88,6 +88,7 @@ class DocPage(threading.Thread):
             self.q_documents.put( lbc_item, block=True, timeout=None)
         except queue.Full:
             self._logger.debug("add_Queue_Documents : self.q_doc_url queue Full" )
+
 
     def start(self):
         super().start()
@@ -105,6 +106,6 @@ class DocPage(threading.Thread):
                 self.worker()
                 #time.sleep(1)   #FIXME
             except Exception as e:
-                self._logger.info( "exception {} DocPage loop".format(e) )
-
+                self._logger.debug( "exception {} DocPage loop".format(e) )
+                self._logger.exception(e)
         self._logger.info("Finished or stopped DocPage loop")

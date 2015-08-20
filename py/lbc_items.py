@@ -225,11 +225,16 @@ class LeboncoinItem():
         self._dict.update( dict( document_Criterias.__dict__["criterias_dict"]) )
 
         #remove empty key
-        for remove_key in [k for k,v in self._dict.items() if v is '']:
-            self._logger.debug("Remove key empty {}".format(remove_key) )
-            self._dict.pop(key)
-
-        #print ( self._dict)
+        keys2remove = [k for k,v in self._dict.items() if v is '']
+        self._logger.debug( "LeboncoinItem  keys2remove : {}".format( keys2remove ))
+        self._logger.debug( "LeboncoinItem  dict : {}".format( self._dict ))
+        for remove_key in keys2remove:
+            self._logger.debug("Remove empty key  {}".format(remove_key) )
+            try:
+                self._dict.pop(remove_key)
+            except KeyError:
+                self._logger.debug("Remove empty key  {}".format(remove_key) )
+        self._logger.debug( "LeboncoinItem  dict : {}".format( self._dict ))
 
     def json_it(self):
         return json.dumps( self._dict )

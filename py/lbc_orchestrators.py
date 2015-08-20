@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 from colorama import Fore, Back, Style
+import datetime
 
 import requests
 from urllib.parse import urlparse
@@ -54,6 +55,8 @@ class LBC_Orchestrator():
         self._frontPage_center = FrontPage_orchestrator( self._q_docPageUrls)
         self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialized" )
 
+        self._logger.debug("LBC_Orchestrator initialized" )
+
 
     def run(self):
         self._logger.debug("LBC_Orchestrator Launch _bdd_center.run()" )
@@ -65,17 +68,33 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.run()" )
         self._frontPage_center.run()
 
+        #self.stats()
+        self.updateStatistics()
+
+
     def stats(self):
-        Thread.start_new_thread(updateStatistics , (self._q_documents , self._bdd_center ) )
+        t = threading.Thread(target=self.updateStatistics, args=(self._q_documents , self._bdd_center ))
+        t.daemon = True
+        t.start()
 
-    def updateStatistics(queue_doc, bdd_center):
+    #def updateStatistics( self , queue_doc, bdd_center ):
+    def updateStatistics( self ):
         start_time = time.time()
-
+        interval = 2 # wait  in second
         last_value = 0
+
+        next_call = time.time()
         while 1:
+            nb_docs_saved =  self._bdd_center._bdd_thread._nb_object_saved
             now = time.time()
-            nb_docs_saved = self._bdd_center._bdd_thread._nb_object_saved
-            time.sleep(60)
+            time_passed = now - start_time
+            print("nb_docs_saved", nb_docs_saved)
+            print("time_passed", time_passed)
+            req_by_min = nb_docs_saved * time_passed/60
+            print("req_by_min", req_by_min )
+            print( datetime.datetime.now() )
+            next_call += interval
+            time.sleep( next_call - time.time() )
 
 
 class BDD_orchestrator():
@@ -150,15 +169,13 @@ class FrontPage_orchestrator():
 
 
 
-
-
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
 
     #logging.basicConfig(level=logging.DEBUG)
 
-    logging.basicConfig(filename="lbc.log", level=logging.DEBUG)
+    logging.basicConfig(filename="lbc.log", level=logging.INFO)
 
     lbc_center = LBC_Orchestrator()
     lbc_center.run()
