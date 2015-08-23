@@ -208,10 +208,7 @@ class LeboncoinItem():
         document_Uploader = document_uploader_factory( tree )
         document_Localisation = document_localisation_factory( tree )
         document_Price = document_price_factory( tree )
-
         document_Criterias = document_criterias_factory( tree )
-
-        #FIXME 'key' is not defined DocPage loop
 
         #return OrdereDict  _document_Identifier._asdict()
         #return OrdereDict  _document_Identifier.__dict__

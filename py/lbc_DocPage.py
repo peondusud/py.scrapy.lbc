@@ -19,7 +19,7 @@ from lbc_items import *
 
 class DocPage(threading.Thread):
 
-    def __init__(self, q_doc_urls, q_documents ):
+    def __init__(self, q_doc_urls, q_documents, q_stats_doc ):
         self._logger = logging.getLogger(__name__)
 
         super().__init__()

@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 from lxml import html     #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
 import queue
-from collections import namedtuple
+from collections import namedtuple, deque
 import threading
 import itertools
 #from multiprocessing import Process, Value, Array, Pool
@@ -43,16 +43,28 @@ class LBC_Orchestrator():
         self._q_documents = queue.Queue()
         self._logger.debug("LBC_Orchestrator _q_documents  created" )
 
+        self._logger.debug("LBC_Orchestrator q_stats_doc initialize" )
+        self.q_stats_doc = deque()
+        self._logger.debug("LBC_Orchestrator q_stats_doc initialized" )
+
+        self._logger.debug("LBC_Orchestrator q_stats_front initialize" )
+        self.q_stats_front = deque()
+        self._logger.debug("LBC_Orchestrator q_stats_front initialized" )
+
+        self._logger.debug("LBC_Orchestrator q_stats_bdd initialize" )
+        self.q_stats_bdd = deque()
+        self._logger.debug("LBC_Orchestrator q_stats_bdd initialized" )
+
         self._logger.debug("LBC_Orchestrator BDD_orchestrator initialize" )
-        self._bdd_center = BDD_orchestrator( self._q_documents)
+        self._bdd_center = BDD_orchestrator( self._q_documents, self.q_stats_bdd )
         self._logger.debug("LBC_Orchestrator BDD_orchestrator initialized" )
 
         self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialize" )
-        self._docPage_center = DocPage_orchestrator(self._q_docPageUrls, self._q_documents)
+        self._docPage_center = DocPage_orchestrator(self._q_docPageUrls, self._q_documents, self.q_stats_doc )
         self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialized" )
 
         self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialize" )
-        self._frontPage_center = FrontPage_orchestrator( self._q_docPageUrls)
+        self._frontPage_center = FrontPage_orchestrator( self._q_docPageUrls, self.q_stats_front )
         self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialized" )
 
         self._logger.debug("LBC_Orchestrator initialized" )
@@ -82,30 +94,34 @@ class LBC_Orchestrator():
         start_time = time.time()
         interval = 2 # wait  in second
         last_value = 0
-
+        nb_docs_saved = 0
         next_call = time.time()
         while 1:
-            nb_docs_saved =  self._bdd_center._bdd_thread._nb_object_saved
+            try:
+                if len(self.q_stats_bdd) >0:
+                    nb_docs_saved =  self.q_stats_bdd.pop()
+            except IndexError:
+                print("updateStatistics pop IndexError")
+
             now = time.time()
             time_passed = now - start_time
             print("nb_docs_saved", nb_docs_saved)
             print("time_passed", time_passed)
-            req_by_min = nb_docs_saved * time_passed/60
+            req_by_min = nb_docs_saved * 60/ time_passed
             print("req_by_min", req_by_min )
-            print( datetime.datetime.now() )
             next_call += interval
             time.sleep( next_call - time.time() )
 
 
 class BDD_orchestrator():
-    def __init__(self,   q_documents):
+    def __init__(self,   q_documents, q_stats_bdd):
         self._logger = logging.getLogger(__name__)
 
         self._q_documents = q_documents
         self._logger.debug("BDD_orchestrator self._q_documents  created" )
 
         self._logger.debug("BDD_orchestrator BDD_file  initialize" )
-        self._bdd_thread = BDD_file( self._q_documents )
+        self._bdd_thread = BDD_file( self._q_documents , q_stats_bdd)
 
     def run(self):
         self._logger.debug("BDD_orchestrator BDD_file  in run()" )
@@ -113,7 +129,7 @@ class BDD_orchestrator():
 
 
 class DocPage_orchestrator():
-    def __init__(self,  q_doc_urls, q_documents):
+    def __init__(self,  q_doc_urls, q_documents, q_stats_doc):
         self._logger = logging.getLogger(__name__)
         self._q_doc_urls = q_doc_urls
         self._logger.debug("_q_doc_urls created" )
@@ -127,7 +143,7 @@ class DocPage_orchestrator():
 
         self._logger.debug("initialize pool_DocPageWorkers" )
         for a in range(nb_concurent_documentScraper):
-            doc_page_thread = DocPage( self._q_doc_urls, self._q_documents )
+            doc_page_thread = DocPage( self._q_doc_urls, self._q_documents , q_stats_doc )
             self._logger.debug("Create a new doc_page_thread instance" )
             self.pool_DocPageWorkers.append( doc_page_thread )
         self._logger.debug("pool_DocPageWorkers Initialized" )
@@ -139,7 +155,7 @@ class DocPage_orchestrator():
 
 class FrontPage_orchestrator():
 
-    def __init__(self,  q_doc_urls):
+    def __init__(self,  q_doc_urls, q_stats_front):
         self._logger = logging.getLogger(__name__)
 
         self._q_frontPageUrls = queue.Queue()
@@ -158,7 +174,7 @@ class FrontPage_orchestrator():
         self._logger.debug("initialize pool_FrontWorkers" )
         self.pool_FrontWorkers = []
         for a in range( nb_Thread_FrontPage ):
-            front_page_thread = FrontPage( self._q_frontPageUrls, self._q_doc_urls )
+            front_page_thread = FrontPage( self._q_frontPageUrls, self._q_doc_urls , q_stats_front)
             self._logger.debug("Create a new front_page_thread instance" )
             self.pool_FrontWorkers.append( front_page_thread )
         self._logger.debug("pool_FrontWorkers Initialized" )

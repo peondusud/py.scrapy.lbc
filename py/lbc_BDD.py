@@ -14,12 +14,14 @@ from lbc_items import *
 
 class BDD_file(threading.Thread):
 
-    def __init__(self, q_documents):
+    def __init__(self, q_documents, q_stats_bdd):
         self._logger = logging.getLogger(__name__)
         super().__init__()
         self._q_documents = q_documents
         self._event = threading.Event()
-        self._nb_object_saved = 0
+        self._q_stats_bdd = q_stats_bdd
+        self._bulk_nb_doc = 10
+
         self._logger.debug("BDD_file initialized" )
 
 
@@ -33,8 +35,8 @@ class BDD_file(threading.Thread):
 
 
     def worker(self):
-        nb_doc = 10
 
+        nb_objects_saved = 0
         self._logger.debug( Fore.RED + "BDD_file in worker" + Fore.RESET )
         with open("/home/peon/py.scrapy.lbc/py/lbc.json", 'w+') as f:
             bulk = []
@@ -43,14 +45,17 @@ class BDD_file(threading.Thread):
                 self._logger.debug(  Fore.RED + "Worker while1 loop q_documents.qsize : {}".format( self._q_documents.qsize() ) + Fore.RESET )
                 self._logger.debug(  Fore.RED + "Worker while1 loop bulk size : {}".format( self._q_documents.qsize() ) + Fore.RESET )
                 #if self._q_documents.qsize() > nb_doc:
-                if len(bulk) > nb_doc:
+                if len(bulk) > self._bulk_nb_doc :
                     self._logger.debug(  Fore.RED + "Worker enter if condition q_documents.qsize :{}".format( self._q_documents.qsize() ) + Fore.RESET )
                     self._logger.debug(  Fore.RED + "Worker enter if condition bulk size : {}".format( len(bulk) ) + Fore.RESET )
                     f.write( "\n".join(bulk) )
                     f.flush()
                     bulk = []
-                    self._logger.info(  Fore.RED + "Worker write  {} documents".format( nb_doc ) + Fore.RESET )
-                    self._nb_object_saved += nb_doc
+                    self._logger.info(  Fore.RED + "Worker write  {} documents".format( self._bulk_nb_doc ) + Fore.RESET )
+                    nb_objects_saved += self._bulk_nb_doc
+
+                    self._q_stats_bdd.clear()
+                    self._q_stats_bdd.append(nb_objects_saved)
 
                 try:
                     document = self._q_documents.get(block=True, timeout=None)

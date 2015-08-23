@@ -18,7 +18,7 @@ allow_domains = [ "leboncoin.fr" ]
 
 class FrontPage(threading.Thread):
 
-    def __init__(self, q_front_urls , q_doc_urls):
+    def __init__(self, q_front_urls , q_doc_urls, q_stats_front ):
         self._logger = logging.getLogger(__name__)
 
         super().__init__()
@@ -74,7 +74,7 @@ class FrontPage(threading.Thread):
             response.raise_for_status()
         #self._logger.debug( "Fetch headers sent to server : {}".format( response.request.headers)  )
         #self._logger.debug( "Fetch headers sent from server : {}".format( response.headers)  )
-        return response .text
+        return response.text
 
 
     def scrap(self, page):
