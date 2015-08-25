@@ -190,8 +190,8 @@ if __name__ == '__main__':
 
 
     #logging.basicConfig(level=logging.DEBUG)
-
-    logging.basicConfig(filename="lbc.log", level=logging.INFO)
+    path = os.path.join(os.getcwd(), "lbc.log")
+    logging.basicConfig(filename=path , level=logging.INFO)
 
     lbc_center = LBC_Orchestrator()
     lbc_center.run()

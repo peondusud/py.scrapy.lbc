@@ -38,7 +38,8 @@ class BDD_file(threading.Thread):
 
         nb_objects_saved = 0
         self._logger.debug( Fore.RED + "BDD_file in worker" + Fore.RESET )
-        with open("/home/peon/py.scrapy.lbc/py/lbc.json", 'w+') as f:
+        path = os.path.join(os.getcwd(), "lbc.json")
+        with open( path , 'w+') as f:
             bulk = []
             while 1:
 

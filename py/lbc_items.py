@@ -5,56 +5,56 @@ import json
 import re
 from collections import namedtuple
 
-Document_Identifier = namedtuple( "Document_Identifier", [ "doc_url", "doc_id", "doc_category" ])
-Document_Category = namedtuple( "Document_Category", [ "doc_category", "title", "region", "img_urls", "desc" ])
+Document_Identifier = namedtuple( "Document_Identifier", [ "doc_url", "ad", "subcat" ])
+Document_subcategory = namedtuple( "Document_subcategory", [ "subcat", "titre", "region", "img_urls", "desc" ])
 Document_Uploader = namedtuple( "Document_Uploader", [ "uploader_name", "uploader_url", "uploader_id", "uploader_ispro", "uploader_pro_siren"])
 Document_Price = namedtuple( "Document_Price", [ "price_currency", "price", "urgent" ])
-Document_Localisation = namedtuple( "Document_Localisation", ["addr_locality", "postal_code", "location" ])
+Document_Localisation = namedtuple( "Document_Localisation", ["city", "cp", "location" ])
 Document_Criterias = namedtuple( "Document_Criterias", [ "criterias_dict" ])
 
 def document_identifier_factory( doc_url ):
     logger = logging.getLogger(__name__)
     logger.debug( "document_identifier_factory doc_url {}".format(doc_url) )
     url_slash_split = doc_url.split("/")
-    doc_category = url_slash_split[3]
-    logger.debug( "document_identifier_factory doc_category {}".format(doc_category) )
+    subcat = url_slash_split[3]
+    logger.debug( "document_identifier_factory subcat {}".format(subcat) )
 
-    logger.debug( "doc_category {}".format( doc_category ) )
-    doc_id = int( url_slash_split[-1].split(".htm")[0] )
-    logger.debug( "document_identifier_factory doc_id  {}".format( doc_id ) )
+    logger.debug( "subcat {}".format( subcat ) )
+    ad = int( url_slash_split[-1].split(".htm")[0] )
+    logger.debug( "document_identifier_factory ad  {}".format( ad ) )
 
     logger.debug( "document_identifier_factory doc_url  {}".format( doc_url) )
-    return Document_Identifier(doc_url, doc_id, doc_category)
+    return Document_Identifier(doc_url, ad, subcat)
 
-def  document_category_factory( tree ):
+def  document_subcategory_factory( tree ):
     logger = logging.getLogger(__name__)
-    doc_category = ""
-    title = ""
+    subcat = ""
+    titre = ""
     region = ""
     img_urls = ""
     desc = ""
     try:
-        title = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')[0]
+        titre = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')[0]
     except IndexError:
-        logger.error( "document_category_factory IndexError", exc_info=True )
-        logger.debug( "document_category_factory title  {}".format( title ) )
+        logger.error( "document_subcategory_factory IndexError", exc_info=True )
+        logger.debug( "document_subcategory_factory titre  {}".format( titre ) )
     header_path = tree.xpath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')
     try:
         region = header_path[1]
-        doc_category = header_path[2]
+        subcat = header_path[2]
     except IndexError:
-        logger.debug( "document_category_factory header_path {}".format( header_path)  )
-        logger.error( "document_category_factory IndexError", exc_info=True)
-    logger.debug( "document_category_factory region  {}".format( region ) )
-    logger.debug( "document_category_factory doc_category  {}".format( doc_category ) )
+        logger.debug( "document_subcategory_factory header_path {}".format( header_path)  )
+        logger.error( "document_subcategory_factory IndexError", exc_info=True)
+    logger.debug( "document_subcategory_factory region  {}".format( region ) )
+    logger.debug( "document_subcategory_factory subcat  {}".format( subcat ) )
 
     img_urls = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]/meta/@content')
-    logger.debug( "document_category_factory img_urls  {}".format( img_urls ) )
+    logger.debug( "document_subcategory_factory img_urls  {}".format( img_urls ) )
 
     description  = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
     desc  = u" ".join( map(lambda x: x.strip().replace("\n","").replace("  ","") ,description))
-    logger.debug( "document_category_factory desc  {}".format( desc ) )
-    return Document_Category( doc_category , title , region , img_urls, desc)
+    logger.debug( "document_subcategory_factory desc  {}".format( desc ) )
+    return Document_subcategory( subcat , titre , region , img_urls, desc)
 
 
 def document_uploader_factory( tree ):
@@ -95,7 +95,7 @@ def document_price_factory(tree):
 
     try:
         price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')[0]
-        price = int(tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')[0] )
+        prix = int(tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')[0] )
         urgent = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
         if urgent:
            urgent = 1
@@ -112,27 +112,27 @@ def document_price_factory(tree):
 
 def document_localisation_factory(tree):
     logger = logging.getLogger(__name__)
-    addr_locality = ""
-    postal_code = ""
+    city = ""
+    cp = ""
 
     latitude = ""
     longitude = ""
     location= []
     try:
-        addr_locality = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
-        logger.debug( "document_localisation_factor addr_locality  {}".format( addr_locality ))
-        addr_locality = addr_locality[0]
+        city = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
+        logger.debug( "document_localisation_factor city  {}".format( city ))
+        city = city[0]
     except IndexError as e:
-       logger.error( "document_localisation_factory addr_locality IndexError" , exc_info=True  )
-       logger.debug( "document_localisation_factor addr_locality  {}".format( addr_locality ))
+       logger.error( "document_localisation_factory city IndexError" , exc_info=True  )
+       logger.debug( "document_localisation_factor city  {}".format( city ))
 
     try:
-        postal_code = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
-        postal_code = postal_code[0]
-        postal_code =  int(postal_code)
+        cp = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
+        cp = cp[0]
+        cp =  int(cp)
     except IndexError as e:
-       logger.error( "document_localisation_factory addr_locality IndexError" , exc_info=True  )
-       logger.debug( "document_localisation_factor postal_code  {}".format( postal_code ))
+       logger.error( "document_localisation_factory city IndexError" , exc_info=True  )
+       logger.debug( "document_localisation_factor cp  {}".format( cp ))
 
     try:
         latitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="latitude"]/@content')
@@ -154,7 +154,7 @@ def document_localisation_factory(tree):
     location = [ longitude, latitude]
     location = list(map( float, location))
     logger.debug( "document_localisation_factor location  {}".format( location ))
-    return Document_Localisation( addr_locality, postal_code ,location )
+    return Document_Localisation( city, cp ,location )
 
 def document_criterias_factory( tree ):
     logger = logging.getLogger(__name__)
@@ -190,7 +190,7 @@ def document_criterias_factory( tree ):
             except IndexError as e:
                 logger.debug( "document_criterias_factory value links IndexError" )
 
-        criterias_dict[header] = value
+        criterias_dict[header.lower()] = value
         #criterias_dict.update({ header : value })
         logger.debug( "document_criterias_factory {} : _{}_".format( header , value ))
 
@@ -204,7 +204,7 @@ class LeboncoinItem():
     def __init__(self, url, tree):
         self._logger = logging.getLogger(__name__)
         document_Identifier = document_identifier_factory( url )
-        document_Category = document_category_factory( tree )
+        document_subcategory = document_subcategory_factory( tree )
         document_Uploader = document_uploader_factory( tree )
         document_Localisation = document_localisation_factory( tree )
         document_Price = document_price_factory( tree )
@@ -213,7 +213,7 @@ class LeboncoinItem():
         #return OrdereDict  _document_Identifier._asdict()
         #return OrdereDict  _document_Identifier.__dict__
         self._dict =  dict( document_Identifier.__dict__ )
-        self._dict.update( dict( document_Category.__dict__) )
+        self._dict.update( dict( document_subcategory.__dict__) )
         self._dict.update( dict( document_Uploader.__dict__) )
         self._dict.update( dict( document_Localisation.__dict__) )
         self._dict.update( dict( document_Price.__dict__) )
@@ -241,18 +241,18 @@ class LeboncoinItem():
 #################################################################################################################
 
 """
-Document_Category = namedtuple("Document_Category", ["doc_category", "pro_flag", "announcement_type"])
+Document_subcategory = namedtuple("Document_subcategory", ["subcat", "pro_flag", "announcement_type"])
 Document_Localisation = namedtuple("Document_Localisation", ["region", "department", "zip_code", "town", "location"])
 Document_Uploader = namedtuple("Document_Uploader", ["uploader_name", "uploader_url", "uploader_id", "uploader_pro_siren"])
-Document_Category_Criterias = namedtuple("Document_Criterias", ["criterias_dict" ]) #FIXME give dict() <====
-Document_Announcement = namedtuple("Document_Announcement", ["title", "description", "price", "price_currency", "img_urls", "upload_date", "urgent", "doc_url", "doc_id" ])
+Document_subcategory_Criterias = namedtuple("Document_Criterias", ["criterias_dict" ]) #FIXME give dict() <====
+Document_Announcement = namedtuple("Document_Announcement", ["titre", "description", "price", "price_currency", "img_urls", "upload_date", "urgent", "doc_url", "ad" ])
 
 
-def  document_Category_factory(tree):
-    doc_category = ""
+def  document_subcategory_factory(tree):
+    subcat = ""
     pro_flag = ""
     announcement_type = ""
-    return Document_Category( doc_category, pro_flag, announcement_type)
+    return Document_subcategory( subcat, pro_flag, announcement_type)
 
 def  document_Localisation_factory(tree):
     region = ""
@@ -267,14 +267,14 @@ def  document_Uploader_factory(tree):
     announcement_type = ""
     return Document_Uploader( uploader_name, uploader_url, uploader_id, uploader_pro_siren )
 
-def  document_Category_Criterias_factory(tree):
+def  document_subcategory_Criterias_factory(tree):
     pass
     criterias_dict = {}
     return Document_Criterias( criterias_dict )
 
-def  document_Category_Criterias_factory(tree):
+def  document_subcategory_Criterias_factory(tree):
     pass
-    title= ""
+    titre= ""
     description= ""
     price= ""
     price_currency= ""
@@ -282,17 +282,17 @@ def  document_Category_Criterias_factory(tree):
     upload_date= ""
     urgent= ""
     doc_url= ""
-    doc_id
-    return Document_Announcement( title, description, price, price_currency, img_urls, upload_date, urgent, doc_url, doc_id )
+    ad
+    return Document_Announcement( titre, description, price, price_currency, img_urls, upload_date, urgent, doc_url, ad )
 
 class LeboncoinItem2():
 
     def __init__(self, url, tree):
 
-        self._document_Category = document_Category_factory(tree)
+        self._document_subcategory = document_subcategory_factory(tree)
         self._document_Localisation = document_Localisation_factory(tree)
         self._document_Uploader = document_Uploader_factory(tree)
-        self._document_Category_Criterias = document_Category_Criterias_factory(tree)
+        self._document_subcategory_Criterias = document_subcategory_Criterias_factory(tree)
         self._document_Announcement = document_Announcement_factory(tree)
 
         def json_it(self):
