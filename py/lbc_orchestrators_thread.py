@@ -98,16 +98,16 @@ class LBC_Orchestrator():
         while 1:
             try:
                 if self.q_stats_bdd.qsize() > 0:
-                    nb_docs_saved =  self.q_stats_bdd.pop()
+                    nb_docs_saved =  self.q_stats_bdd.get()
             except IndexError:
                 print("updateStatistics pop IndexError")
 
             now = time.time()
             time_passed = now - start_time
-            print("nb_docs_saved", nb_docs_saved)
-            print("time_passed", time_passed)
             req_by_min = nb_docs_saved * 60 / time_passed
-            print("req_by_min", req_by_min )
+            print(Fore.RED + "nb_docs_saved\t: {}".format(nb_docs_saved) + Fore.RESET )
+            print(Fore.YELLOW+ "time_passed\t: {:.2f}".format(time_passed) + Fore.RESET)
+            print(Fore.CYAN + "req_by_min\t: {:.2f}\n".format( req_by_min ) + Fore.RESET)
             next_call += interval
             time.sleep( next_call - time.time() )
 

@@ -51,7 +51,10 @@ class BDD_file(threading.Thread):
                     self._logger.info( Fore.RED + "Worker write  {} documents".format( self._bulk_nb_doc ) + Fore.RESET )
 
                     nb_objects_saved += self._bulk_nb_doc
-                    self._q_stats_bdd.append( nb_objects_saved )
+                    try:
+                        self._q_stats_bdd.put( nb_objects_saved )
+                    except queue.Full:
+                        self._logger.debug("self._q_stats_bdd queue Full" )
                 try:
                     document = self._q_documents.get(block=True, timeout=None)
                     self._logger.debug( Fore.RED + "Worker loop document {}".format( document ) + Fore.RESET)

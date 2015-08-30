@@ -62,10 +62,18 @@ class FrontPage(threading.Thread):
             self._logger.error( "page empty or None" )
 
     def fetch(self, frontPage_url):
-        self._logger.debug( "Handling request : {}".format( frontPage_url) )
-        response = requests.get( frontPage_url , timeout=3, headers=self._http_headers)
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+        try:
+            self._logger.debug( "Handling request : {}".format( frontPage_url) )
+            response = requests.get( frontPage_url , timeout=3, headers=self._http_headers)
+            if response.status_code != requests.codes.ok:
+                response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            self._logger.error("HTTP request {}".format(e) )
+            self._logger.debug("HTTP request {}".format(e), exc_info=1)
+            time.sleep(0.3)
+            self._logger.info("HTTP request Relauching fetch")
+            return self.fetch()
+
         self._logger.debug( "Fetch headers sent to server : {}".format( response.request.headers)  )
         self._logger.debug( "Fetch headers sent from server : {}".format( response.headers)  )
         return response.text

@@ -15,6 +15,7 @@ Document_Uploader = namedtuple( "Document_Uploader", [ "uploader_name", "uploade
 Document_Price = namedtuple( "Document_Price", [ "price_currency", "price", "urgent" ])
 Document_Localisation = namedtuple( "Document_Localisation", ["city", "cp", "location" ])
 Document_Criterias = namedtuple( "Document_Criterias", [ "criterias_dict" ])
+Document_Criterias_From_JS = namedtuple( "Document_Criterias_From_JS", [ "criterias_js_dict" ])
 
 def document_identifier_factory( doc_url ):
     logger = logging.getLogger(__name__)
@@ -38,14 +39,19 @@ def  document_subcategory_factory( tree ):
     img_urls = ""
     desc = ""
     try:
-        titre = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')[0]
+        titre = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
+        if  titre != []:
+            titre = titre[0]
+        else:
+            titre = ""
     except IndexError:
         logger.error( "document_subcategory_factory IndexError", exc_info=True )
         logger.debug( "document_subcategory_factory titre  {}".format( titre ) )
     header_path = tree.xpath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')
     try:
-        region = header_path[1]
-        subcat = header_path[2]
+        if  header_path != []:
+            region = header_path[1]
+            subcat = header_path[2]
     except IndexError:
         logger.debug( "document_subcategory_factory header_path {}".format( header_path)  )
         logger.error( "document_subcategory_factory IndexError", exc_info=True)
@@ -56,7 +62,14 @@ def  document_subcategory_factory( tree ):
     logger.debug( "document_subcategory_factory img_urls  {}".format( img_urls ) )
 
     description  = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
-    desc  = u" ".join( map(lambda x: x.strip().replace("\n","").replace("  ","") ,description))
+    def sanitize_description(description):
+        sanitize_desc = description.strip()
+        sanitize_desc.replace("\n","")
+        sanitize_desc.replace("  ","")
+        #logger.debug(">>>>>>>>>>>>>>>><"+ sanitize_desc)
+        return sanitize_desc
+
+    desc  = u" ".join( map( sanitize_description  ,description))
     logger.debug( "document_subcategory_factory desc  {}".format( desc ) )
     return Document_subcategory( subcat , titre , region , img_urls, desc)
 
@@ -98,8 +111,18 @@ def document_price_factory(tree):
     price = ""
     urgent = ""
     try:
-        price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')[0]
-        prix = int(tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')[0] )
+        price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')
+        if  price_currency != []:
+            price_currency = price_currency[0]
+        else:
+            price_currency = ""
+
+        prix = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')
+        if  prix != []:
+            prix = prix[0]
+            prix = int(prix )
+        else:
+            prix = ""
         urgent = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
         if urgent:
            urgent = 1
@@ -125,22 +148,31 @@ def document_localisation_factory(tree):
     try:
         city_l = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
         logger.debug( "document_localisation_factor city  {}".format( city_l ))
-        city = city_l[0]
+        if  city_l != []:
+            city = city_l[0]
+        else:
+            city = ""
     except IndexError as e:
        logger.error( "document_localisation_factory city IndexError" , exc_info=True  )
        logger.debug( "document_localisation_factor city  {}".format( city_l ))
 
     try:
         cp = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
-        cp = cp[0]
-        cp =  int(cp)
+        if  cp != []:
+            cp = cp[0]
+            cp =  int(cp)
+        else:
+            cp = ""
     except IndexError as e:
        logger.error( "document_localisation_factory city IndexError" , exc_info=True  )
        logger.debug( "document_localisation_factor cp  {}".format( cp ))
 
     try:
         latitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="latitude"]/@content')
-        latitude = latitude[0]
+        if  latitude != []:
+            latitude = latitude[0]
+        else:
+            latitude = ""
         logger.debug( "document_localisation_factor latitude  {}".format( latitude ))
     except IndexError as e:
         logger.error( "document_localisation_factory latitude IndexError", exc_info=True  )
@@ -148,7 +180,10 @@ def document_localisation_factory(tree):
 
     try:
         longitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="longitude"]/@content')
-        longitude = longitude[0]
+        if  longitude != []:
+            longitude = longitude[0]
+        else:
+            latitude = ""
         logger.debug( "document_localisation_factor longitude  {}".format( longitude ))
     except IndexError as e:
         logger.error( "document_localisation_factory latitude IndexError", exc_info=True  )
@@ -176,6 +211,7 @@ def document_criterias_factory( tree ):
             header = header[0]
             header = header.split(" : ")[0]
             header = header.split(" :")[0]
+            header = header.lower()
         except IndexError as e:
             logger.debug( "document_criterias_factory header IndexError" )
 
@@ -194,12 +230,34 @@ def document_criterias_factory( tree ):
             except IndexError as e:
                 logger.debug( "document_criterias_factory value links IndexError" )
 
-        criterias_dict[header.lower()] = value
+        criterias_dict[header] = value
         #criterias_dict.update({ header : value })
         logger.debug( "document_criterias_factory {} : _{}_".format( header , value ))
 
     logger.debug( "document_criterias_factory criterias_dict  {}".format( criterias_dict ))
     return Document_Criterias( criterias_dict )
+
+def document_criterias_factory_from_js( tree ):
+    logger = logging.getLogger(__name__)
+    js_var = tree.xpath('/html/body/script[1]/text()')
+    js_var = js_var[0]
+    js_var = str( js_var.strip() )
+    logger.debug("document_criterias_factory_from_js js_var  {}".format(js_var) )
+
+    pattern = '\s\s(\w+)\s:\s"(.+)",?'
+    prog = re.compile(pattern)
+    criterias_js_dict = {}
+    for line in js_var.splitlines():
+        result = prog.search(line )
+        if result is not None:
+            #print( result.groups() )
+            key = result.group(1)
+            val = result.group(2)
+            logger.debug("document_criterias_factory_from_js key {}".format(key) )
+            logger.debug("document_criterias_factory_from_js val {}".format(val) )
+            criterias_js_dict[key] = val
+    logger.debug("document_criterias_factory_from_js criterias_js_dict {}".format( criterias_js_dict) )
+    return Document_Criterias_From_JS( criterias_js_dict )
 
 
 
@@ -213,6 +271,7 @@ class LeboncoinItem():
         document_Localisation = document_localisation_factory( tree )
         document_Price = document_price_factory( tree )
         document_Criterias = document_criterias_factory( tree )
+        document_Criterias_from_js = document_criterias_factory_from_js( tree )
 
         #return OrdereDict  _document_Identifier._asdict()
         #return OrdereDict  _document_Identifier.__dict__
@@ -222,8 +281,9 @@ class LeboncoinItem():
         self._dict.update( dict( document_Localisation.__dict__) )
         self._dict.update( dict( document_Price.__dict__) )
 
-        #return only the value (containing a dict)
+        #return only the values (containing a dict)
         self._dict.update( dict( document_Criterias.__dict__["criterias_dict"]) )
+        self._dict.update( dict( document_Criterias_from_js.__dict__["criterias_js_dict"]) )
 
         #remove empty key
         keys2remove = [k for k,v in self._dict.items() if v is '']
