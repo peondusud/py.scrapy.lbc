@@ -61,7 +61,7 @@ class BDD_file(threading.Thread):
                     document_json = document.json_it()
                     self._logger.debug( Fore.RED + "Worker loop document_json {}".format( document_json ) + Fore.RESET)
                     bulk.append( document_json )
-                    self._q_documents.task_done()
+                    #self._q_documents.task_done()
                 except queue.Empty:
                     self._logger.debug( Fore.RED + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
                 self._logger.debug(Fore.RED + "Worker sleep 1" + Fore.RESET)

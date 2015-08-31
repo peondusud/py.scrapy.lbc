@@ -90,11 +90,11 @@ class LBC_Orchestrator():
 
 
     def stats(self):
-        t = threading.Thread(target=self.updateStatistics, args=( self.q_stats_bdd, ))
+        t = threading.Thread(target=self.updateStatistics)
         t.daemon = True
         t.start()
 
-    def updateStatistics( q_stats_bdd ):
+    def updateStatistics( self ):
         start_time = time.time()
         interval = 2 # wait  in second
         last_value = 0
@@ -102,8 +102,8 @@ class LBC_Orchestrator():
         next_call = time.time()
         while 1:
             try:
-                if q_stats_bdd.qsize() > 0:
-                    nb_docs_saved =  q_stats_bdd.get()
+                if self.q_stats_bdd.qsize() > 0:
+                    nb_docs_saved =  self.q_stats_bdd.get()
             except IndexError:
                 print("updateStatistics pop IndexError")
             now = time.time()
@@ -125,7 +125,7 @@ class BDD_orchestrator():
 
         self._logger.debug("BDD_orchestrator BDD_file  initialize" )
         self._bdd_thread = BDD_file( self._q_documents, q_stats_bdd, bdd_bulksize, bdd_filename)
-        self._bdd_thread.daemon = True
+        #self._bdd_thread.daemon = True
 
     def run(self):
         self._logger.debug("BDD_orchestrator BDD_file  in run()" )
@@ -151,7 +151,7 @@ class DocPage_orchestrator():
         self._logger.debug("initialize pool_DocPageWorkers" )
         for a in range( self.concurrent_doc ):
             doc_page_thread = DocPage( self._q_doc_urls, self._q_documents , q_stats_doc )
-            doc_page_thread.daemon = True
+            #doc_page_thread.daemon = True
             self._logger.debug("Create a new doc_page_thread instance" )
             self.pool_DocPageWorkers.append( doc_page_thread )
         self._logger.debug("pool_DocPageWorkers Initialized" )
@@ -177,7 +177,7 @@ class FrontPage_orchestrator():
         for a in range( nb_Thread_FrontPage ):
             front_page_thread = FrontPage( self._q_front_urls, self._q_doc_urls , q_stats_front, allow_domains)
             self._logger.debug("Create a new front_page_thread instance" )
-            front_page_thread.daemon = True
+            #front_page_thread.daemon = True
             self.pool_FrontWorkers.append( front_page_thread )
         self._logger.debug("pool_FrontWorkers Initialized" )
 

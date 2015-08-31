@@ -48,7 +48,7 @@ class FrontPage(threading.Thread):
         try:
             frontPage_url = self._q_front_urls.get( block=True, timeout=None)
             self._logger.info( Fore.BLUE + "FRONT URL to Fetch : {}".format( frontPage_url ) + Fore.RESET )
-            self._q_front_urls.task_done()
+            #self._q_front_urls.task_done()
         except queue.Empty:
             self._logger.debug(" self.frontPage_url queue Empty" )
             return
