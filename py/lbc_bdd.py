@@ -13,8 +13,8 @@ from colorama import Fore, Back, Style
 class BDD_file(threading.Thread):
 
     def __init__(self, q_documents, q_stats_bdd, bdd_bulksize, bdd_filename ):
-        self._logger = logging.getLogger(__name__)
         super().__init__()
+        self._logger = logging.getLogger(__name__)
         self._q_documents = q_documents
         self._event = threading.Event()
         self._q_stats_bdd = q_stats_bdd
@@ -61,6 +61,7 @@ class BDD_file(threading.Thread):
                     document_json = document.json_it()
                     self._logger.debug( Fore.RED + "Worker loop document_json {}".format( document_json ) + Fore.RESET)
                     bulk.append( document_json )
+                    self._q_documents.task_done()
                 except queue.Empty:
                     self._logger.debug( Fore.RED + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
                 self._logger.debug(Fore.RED + "Worker sleep 1" + Fore.RESET)

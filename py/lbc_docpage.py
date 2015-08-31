@@ -50,6 +50,7 @@ class DocPage(threading.Thread):
         try:
             self.docPage_url = self.q_doc_urls.get( block=True, timeout=None )
             self._logger.info( Fore.CYAN + "Document URL to Fetch : {}".format( self.docPage_url ) + Fore.RESET )
+            self.q_doc_urls.task_done()
         except queue.Empty:
             self._logger.debug("Fetch self.docPage_url queue Empty:" )
 
