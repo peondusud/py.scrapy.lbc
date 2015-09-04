@@ -86,13 +86,25 @@ class LBC_Orchestrator():
         self._q_frontPageUrls.join()
         self._q_documents.join()
 
-        #self.updateStatistics()
+    def stop(self):
+        self._logger.debug("LBC_Orchestrator Launch _frontPage_center.stop()" )
+        self._frontPage_center.stop()
+
+        self._logger.debug("LBC_Orchestrator Launch _docPage_center.stop()" )
+        self._docPage_center.stop()
+
+        self._logger.debug("LBC_Orchestrator Launch _bdd_center.stop()" )
+        self._bdd_center.stop()
+
+        self._logger.debug("LBC_Orchestrator Launch self.t_stat.stop()" )
+        self.t_stat.stop()
+
 
 
     def stats(self):
-        t = threading.Thread(target=self.updateStatistics)
-        t.daemon = True
-        t.start()
+        self.t_stat = threading.Thread(target=self.updateStatistics)
+        self.t_stat.daemon = True
+        self.t_stat.start()
 
     def updateStatistics( self ):
         start_time = time.time()
@@ -131,6 +143,9 @@ class BDD_orchestrator():
         self._logger.debug("BDD_orchestrator BDD_file  in run()" )
         self._bdd_thread.start()
 
+    def stop(self):
+        self._bdd_thread.stop()
+
 
 class DocPage_orchestrator():
     def __init__(self,  q_doc_urls, q_documents, q_stats_doc, concurrent_doc):
@@ -160,6 +175,9 @@ class DocPage_orchestrator():
         for doc_page_thread in self.pool_DocPageWorkers:
             doc_page_thread.start()
 
+    def stop(self):
+        for doc_page_thread in self.pool_DocPageWorkers:
+            doc_page_thread.stop()
 
 class FrontPage_orchestrator():
 
@@ -184,3 +202,7 @@ class FrontPage_orchestrator():
     def run(self):
         for doc_page_thread in self.pool_FrontWorkers:
             doc_page_thread.start()
+
+    def stop(self):
+        for doc_page_thread in self.pool_FrontWorkers:
+            doc_page_thread.stop()

@@ -6,6 +6,7 @@
 import os
 import logging
 import argparse
+import signal
 from colorama import Fore, Back, Style
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode, urljoin
 from lbc_orchestrators_thread import LBC_Orchestrator
@@ -230,6 +231,14 @@ if __name__ == '__main__':
     concurrent_doc = args.concurrent_doc
     bdd_bulksize = args.bulksize
 
+
     lbc_center = LBC_Orchestrator( start_urls, allow_domains, concurrent_doc, bdd_bulksize, bdd_filename)
+
+    def signal_handler(signal, frame):
+        print('You pressed Ctrl+C!')
+        lbc_center.stop()
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+    
     lbc_center.run()
     logger.debug( "All running" )
