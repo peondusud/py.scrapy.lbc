@@ -10,9 +10,10 @@ import logging
 from colorama import Fore, Back, Style
 import datetime
 
-import queue
-import threading
-#from multiprocessing import Process, Value, Array, Pool
+
+from queue import Queue, Full, Empty
+from threading import Thread, Event
+#from multiprocessing import Process, Value, Array, Pool, Queue
 
 from lbc_frontpage import FrontPage
 from lbc_docpage import DocPage
@@ -27,32 +28,32 @@ class LBC_Orchestrator():
         self.bdd_filename = bdd_filename
         self.concurrent_doc = concurrent_doc
 
-        self._q_frontPageUrls = queue.Queue()
+        self._q_frontPageUrls = Queue()
         self._logger.debug("LBC_Orchestrator _q_frontPageUrls created" )
 
         self._logger.debug("LBC_Orchestrator set _q_frontPageUrls with start_urls" )
         for start_url in start_urls:
             try:
                 self._q_frontPageUrls.put(start_url, block=True, timeout=None)
-            except queue.Full:
+            except Full:
                 self.logger.debug(" self.q_frontPageUrls queue Full" )
 
-        self._q_docPageUrls = queue.Queue()
+        self._q_docPageUrls = Queue()
         self._logger.debug("LBC_Orchestrator _q_docPageUrls  created" )
 
-        self._q_documents = queue.Queue()
+        self._q_documents = Queue()
         self._logger.debug("LBC_Orchestrator _q_documents  created" )
 
         self._logger.debug("LBC_Orchestrator q_stats_doc initialize" )
-        self.q_stats_doc = queue.Queue()
+        self.q_stats_doc = Queue()
         self._logger.debug("LBC_Orchestrator q_stats_doc initialized" )
 
         self._logger.debug("LBC_Orchestrator q_stats_front initialize" )
-        self.q_stats_front = queue.Queue()
+        self.q_stats_front = Queue()
         self._logger.debug("LBC_Orchestrator q_stats_front initialized" )
 
         self._logger.debug("LBC_Orchestrator q_stats_bdd initialize" )
-        self.q_stats_bdd = queue.Queue()
+        self.q_stats_bdd = Queue()
         self._logger.debug("LBC_Orchestrator q_stats_bdd initialized" )
 
         self._logger.debug("LBC_Orchestrator BDD_orchestrator initialize" )
@@ -102,7 +103,7 @@ class LBC_Orchestrator():
 
 
     def stats(self):
-        self.t_stat = threading.Thread(target=self.updateStatistics)
+        self.t_stat = Thread(target=self.updateStatistics)
         self.t_stat.daemon = True
         self.t_stat.start()
 

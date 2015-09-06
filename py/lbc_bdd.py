@@ -5,18 +5,18 @@ import os
 import logging
 import queue
 import time
-import threading
+from threading import Thread, Event
 from colorama import Fore, Back, Style
 
 
 
-class BDD_file(threading.Thread):
+class BDD_file(Thread):
 
     def __init__(self, q_documents, q_stats_bdd, bdd_bulksize, bdd_filename ):
         super().__init__()
         self._logger = logging.getLogger(__name__)
         self._q_documents = q_documents
-        self._event = threading.Event()
+        self._event = Event()
         self._q_stats_bdd = q_stats_bdd
         self._bulk_nb_doc = bdd_bulksize
         self._bdd_filename = bdd_filename

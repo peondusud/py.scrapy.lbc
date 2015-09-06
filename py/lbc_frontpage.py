@@ -10,11 +10,12 @@ import requests
 from urllib.parse import urlparse
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
-import queue
-import threading
+from queue import Queue
+from threading import Thread, Event
+#from multiprocessing import Process, Queue, Event
 
 
-class FrontPage(threading.Thread):
+class FrontPage(Thread):
 
     def __init__(self, q_front_urls , q_doc_urls, q_stats_front , allow_domains ):
         super().__init__()
@@ -42,7 +43,7 @@ class FrontPage(threading.Thread):
 
         self._logger.debug("_session created" )
 
-        self._event = threading.Event()
+        self._event = Event()
 
     def worker(self ):
         try:

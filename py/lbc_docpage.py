@@ -7,13 +7,14 @@ import datetime
 import requests
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
-import queue
-import threading
+
+from threading import Thread, Event
+#from multiprocessing import Process, Queue, Event
 import time
 
 from lbc_item import LeboncoinItem
 
-class DocPage(threading.Thread):
+class DocPage(Thread):
 
     def __init__(self, q_doc_urls, q_documents, q_stats_doc ):
         super().__init__()
@@ -22,7 +23,7 @@ class DocPage(threading.Thread):
         self.docPage_url = ""
         self.q_doc_urls = q_doc_urls
         self.q_documents = q_documents
-        self._event = threading.Event()
+        self._event = Event()
 
         #google_user_agent = { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'}
 
