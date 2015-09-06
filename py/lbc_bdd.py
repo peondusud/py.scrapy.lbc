@@ -5,12 +5,15 @@ import os
 import logging
 import queue
 import time
-from threading import Thread, Event
+#from threading import Thread, Event
+from multiprocessing import Process, Value, Array, Pool, Queue, Event
 from colorama import Fore, Back, Style
+from lbc_item import LeboncoinItem
 
 
 
-class BDD_file(Thread):
+#class BDD_file(Thread):
+class BDD_file(Process):
 
     def __init__(self, q_documents, q_stats_bdd, bdd_bulksize, bdd_filename ):
         super().__init__()
@@ -52,16 +55,14 @@ class BDD_file(Thread):
                     nb_objects_saved += self._bulk_nb_doc
                     try:
                         self._q_stats_bdd.put( nb_objects_saved )
-                    except queue.Full:
+                    except multiprocessing.Full:
                         self._logger.debug("self._q_stats_bdd queue Full" )
                 try:
-                    document = self._q_documents.get(block=True, timeout=None)
-                    self._logger.debug( Fore.RED + "Worker loop document {}".format( document ) + Fore.RESET)
-                    document_json = document.json_it()
+                    document_json= self._q_documents.get(block=True, timeout=None)
                     self._logger.debug( Fore.RED + "Worker loop document_json {}".format( document_json ) + Fore.RESET)
                     bulk.append( document_json )
                     #self._q_documents.task_done()
-                except queue.Empty:
+                except multiprocessing.Empty:
                     self._logger.debug( Fore.RED + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
                 self._logger.debug(Fore.RED + "Worker sleep 1" + Fore.RESET)
                 time.sleep(0.05) #FIXME

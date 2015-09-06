@@ -11,9 +11,9 @@ from colorama import Fore, Back, Style
 import datetime
 
 
-from queue import Queue, Full, Empty
-from threading import Thread, Event
-#from multiprocessing import Process, Value, Array, Pool, Queue
+#from queue import Queue, Full, Empty
+#from threading import Thread, Event
+from multiprocessing import Process, Value, Array, Pool, Queue
 
 from lbc_frontpage import FrontPage
 from lbc_docpage import DocPage
@@ -35,7 +35,7 @@ class LBC_Orchestrator():
         for start_url in start_urls:
             try:
                 self._q_frontPageUrls.put(start_url, block=True, timeout=None)
-            except Full:
+            except multiprocessing.Full:
                 self.logger.debug(" self.q_frontPageUrls queue Full" )
 
         self._q_docPageUrls = Queue()
@@ -81,7 +81,8 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.run()" )
         self._frontPage_center.run()
 
-        self.stats()
+        #self.stats()
+        self.updateStatistics()
 
         #self._q_docPageUrls.join() #FIXME
         #self._q_frontPageUrls.join()
@@ -103,7 +104,7 @@ class LBC_Orchestrator():
 
 
     def stats(self):
-        self.t_stat = Thread(target=self.updateStatistics)
+        self.t_stat = Process(target=self.updateStatistics)
         self.t_stat.daemon = True
         self.t_stat.start()
 
@@ -113,6 +114,7 @@ class LBC_Orchestrator():
         last_value = 0
         nb_docs_saved = 0
         next_call = time.time()
+        print("ca rentre")
         while 1:
             try:
                 if self.q_stats_bdd.qsize() > 0:

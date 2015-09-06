@@ -296,6 +296,7 @@ class LeboncoinItem():
             except KeyError:
                 self._logger.debug("Remove empty key  {}".format(remove_key) )
         self._logger.debug( "LeboncoinItem  dict : {}".format( self._dict ))
+        
 
     def json_it(self):
         return json.dumps( self._dict )

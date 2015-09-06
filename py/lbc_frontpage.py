@@ -10,12 +10,12 @@ import requests
 from urllib.parse import urlparse
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
-from queue import Queue
-from threading import Thread, Event
-#from multiprocessing import Process, Queue, Event
+#from threading import Thread, Event
+from multiprocessing import Process, Value, Array, Pool, Queue, Event
 
 
-class FrontPage(Thread):
+#class FrontPage(Thread):
+class FrontPage(Process):
 
     def __init__(self, q_front_urls , q_doc_urls, q_stats_front , allow_domains ):
         super().__init__()
@@ -50,7 +50,7 @@ class FrontPage(Thread):
             frontPage_url = self._q_front_urls.get( block=True, timeout=None)
             self._logger.info( Fore.BLUE + "FRONT URL to Fetch : {}".format( frontPage_url ) + Fore.RESET )
             #self._q_front_urls.task_done()
-        except queue.Empty:
+        except multiprocessing.Empty:
             self._logger.debug(" self.frontPage_url queue Empty" )
             return
 
@@ -110,7 +110,7 @@ class FrontPage(Thread):
                 self._logger.debug( "Try Add to q_front_urls {}".format(next_url) )
                 self._q_front_urls.put( next_url, block=True, timeout=None)
                 self._logger.debug( Fore.GREEN + "{} Added to q_front_urls".format(next_url) + Fore.RESET )
-            except queue.Full:
+            except multiprocessing.Full:
                 self._logger.debug(" self.q_doc_url queue Full" )
 
     def add_Queue_DocUrls(self,content_urls):
@@ -121,7 +121,7 @@ class FrontPage(Thread):
                 try:
                     self._q_doc_urls.put( page_url, block=True, timeout=None )
                     self._logger.debug( Fore.GREEN + "Added {} to queue".format(page_url) + Fore.RESET )
-                except queue.Full:
+                except multiprocessing.Full:
                     self._logger.debug(" self.q_doc_url queue Full" )
 
     def url_isAllow(self, url_to_check):

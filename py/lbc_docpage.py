@@ -8,13 +8,14 @@ import requests
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
 
-from threading import Thread, Event
-#from multiprocessing import Process, Queue, Event
+#from threading import Thread, Event
+from multiprocessing import Process, Value, Array, Pool, Queue, Event
 import time
 
 from lbc_item import LeboncoinItem
 
-class DocPage(Thread):
+#class DocPage(Thread):
+class DocPage(Process):
 
     def __init__(self, q_doc_urls, q_documents, q_stats_doc ):
         super().__init__()
@@ -51,7 +52,7 @@ class DocPage(Thread):
             self.docPage_url = self.q_doc_urls.get( block=True, timeout=None )
             self._logger.info( Fore.CYAN + "Document URL to Fetch : {}".format( self.docPage_url ) + Fore.RESET )
             #self.q_doc_urls.task_done()
-        except queue.Empty:
+        except multiprocessing.Empty:
             self._logger.debug("Fetch self.docPage_url queue Empty:" )
 
     def fetch(self):
@@ -73,15 +74,15 @@ class DocPage(Thread):
     def scrap(self, page):
         tree = html.fromstring( page )
         lbc_item = LeboncoinItem( self.docPage_url, tree)
-        self._logger.debug( "scrap lbc_item :".format( ( lbc_item ) ) )
-        self.add_Queue_Documents( lbc_item )
+        self._logger.debug( "scrap lbc_item :".format( ( lbc_item) ) )
+        self.add_Queue_Documents( lbc_item.json_it()  )
 
     def add_Queue_Documents(self,  lbc_item):
         #add doc url to doc queue
         try:
             self._logger.debug( "add_Queue_Documents : Try Add to q_documents lbc_item ".format( lbc_item ) )
             self.q_documents.put( lbc_item, block=True, timeout=None)
-        except queue.Full:
+        except multiprocessing.Full:
             self._logger.debug("add_Queue_Documents : self.q_documents queue Full" )
 
 
