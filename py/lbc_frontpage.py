@@ -5,7 +5,7 @@
 
 import logging
 from colorama import Fore, Back, Style
-
+import datetime
 import requests
 from urllib.parse import urlparse
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
@@ -139,7 +139,6 @@ class FrontPage(threading.Thread):
 
     def stop(self):
         self._event.clear()
-        super().stop()
 
     def run(self):
         self._event.wait(timeout=None)

@@ -3,7 +3,7 @@
 
 import logging
 from colorama import Fore, Back, Style
-
+import datetime
 import requests
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
@@ -37,7 +37,6 @@ class DocPage(threading.Thread):
 
     def worker(self ):
         self.get_url_from_q()
-
         page = self.fetch()
         #self._logger.debug( "page {}".format( page))
         if ( page is not None ) or  (not page) :
@@ -82,7 +81,7 @@ class DocPage(threading.Thread):
             self._logger.debug( "add_Queue_Documents : Try Add to q_documents lbc_item ".format( lbc_item ) )
             self.q_documents.put( lbc_item, block=True, timeout=None)
         except queue.Full:
-            self._logger.debug("add_Queue_Documents : self.q_doc_url queue Full" )
+            self._logger.debug("add_Queue_Documents : self.q_documents queue Full" )
 
 
     def start(self):
@@ -91,7 +90,6 @@ class DocPage(threading.Thread):
 
     def stop(self):
         self._event.clear()
-        super().stop()
 
     def run(self):
         self._event.wait( timeout=None )

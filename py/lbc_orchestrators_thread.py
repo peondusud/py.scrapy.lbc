@@ -82,9 +82,9 @@ class LBC_Orchestrator():
 
         self.stats()
 
-        self._q_docPageUrls.join()
-        self._q_frontPageUrls.join()
-        self._q_documents.join()
+        #self._q_docPageUrls.join() #FIXME
+        #self._q_frontPageUrls.join()
+        #self._q_documents.join()
 
     def stop(self):
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.stop()" )
@@ -96,8 +96,8 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _bdd_center.stop()" )
         self._bdd_center.stop()
 
-        self._logger.debug("LBC_Orchestrator Launch self.t_stat.stop()" )
-        self.t_stat.stop()
+        #self._logger.debug("LBC_Orchestrator Launch self.t_stat.stop()" )
+        #self.t_stat.stop() #FIXME
 
 
 
@@ -108,7 +108,7 @@ class LBC_Orchestrator():
 
     def updateStatistics( self ):
         start_time = time.time()
-        interval = 2 # wait  in second
+        interval = 1 # wait  in second
         last_value = 0
         nb_docs_saved = 0
         next_call = time.time()
@@ -122,7 +122,7 @@ class LBC_Orchestrator():
             time_passed = now - start_time
             req_by_min = nb_docs_saved * 60 / time_passed
             print(Fore.RED + "nb_docs_saved\t: {}".format(nb_docs_saved) + Fore.RESET )
-            print(Fore.YELLOW+ "time_passed\t: {:.2f}".format(time_passed) + Fore.RESET)
+            print(Fore.YELLOW + "time_passed\t: {:.2f}".format(time_passed) + Fore.RESET)
             print(Fore.CYAN + "req_by_min\t: {:.2f}\n".format( req_by_min ) + Fore.RESET)
             next_call += interval
             time.sleep( next_call - time.time() )

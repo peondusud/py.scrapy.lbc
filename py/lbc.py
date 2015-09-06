@@ -7,6 +7,7 @@ import os
 import logging
 import argparse
 import signal
+import sys
 from colorama import Fore, Back, Style
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode, urljoin
 from lbc_orchestrators_thread import LBC_Orchestrator
@@ -177,8 +178,21 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     path = os.path.join(os.getcwd(), args.logname )
-    logging.basicConfig( filename=path , level=log_levels[args.level] )
+
+
+    fmt='%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] [%(module)s>s%(funcName)s] %(message)s'
+    datefmt='%Y-%m-%d %H:%M:%S'
+    logging.basicConfig(    filename=path ,
+                            filemode='w',
+                            level=log_levels[args.level] ,
+                            format=fmt ,
+                            datefmt=datefmt)
     logger = logging.getLogger(__name__)
+    logger.setLevel( log_levels[args.level] )
+    #formatter =  logging.Formatter( fmt='%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s' , datefmt='%Y-%m-%d,%H:%M:%S')
+    #fh = logging.FileHandler(path)
+    #fh.setFormatter(formatter)
+    #logger.addHandler(fh)
 
     logger.debug( "args : {}".format(args) )
 
@@ -225,7 +239,7 @@ if __name__ == '__main__':
         modified_url = update_url( url , http_query )
         tmp.append(modified_url)
     start_urls = tmp
-    print(start_urls)
+    print("Start URLs", start_urls)
 
     bdd_filename = args.filename
     concurrent_doc = args.concurrent_doc
@@ -237,8 +251,8 @@ if __name__ == '__main__':
     def signal_handler(signal, frame):
         print('You pressed Ctrl+C!')
         lbc_center.stop()
-        sys.exit(0)
+        os._exit(1)
     signal.signal(signal.SIGINT, signal_handler)
-    
+
     lbc_center.run()
     logger.debug( "All running" )

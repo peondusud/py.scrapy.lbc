@@ -29,7 +29,6 @@ class BDD_file(threading.Thread):
 
     def stop(self):
         self._event.clear()
-        super().stop()
 
 
     def worker(self):
@@ -48,7 +47,7 @@ class BDD_file(threading.Thread):
                     f.write( "\n".join(bulk) )
                     f.flush()
                     bulk = []
-                    self._logger.info( Fore.RED + "Worker write  {} documents".format( self._bulk_nb_doc ) + Fore.RESET )
+                    self._logger.info( Fore.RED + "Worker write {} documents".format( self._bulk_nb_doc ) + Fore.RESET )
 
                     nb_objects_saved += self._bulk_nb_doc
                     try:
@@ -65,7 +64,7 @@ class BDD_file(threading.Thread):
                 except queue.Empty:
                     self._logger.debug( Fore.RED + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
                 self._logger.debug(Fore.RED + "Worker sleep 1" + Fore.RESET)
-                time.sleep(1) #FIXME
+                time.sleep(0.05) #FIXME
         self._logger.debug(Fore.RED + "Finished or stopped BDD_file loop"+ Fore.RESET)
 
 
