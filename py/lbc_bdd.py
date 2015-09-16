@@ -65,7 +65,7 @@ class BDD_file(Process):
                 except multiprocessing.Empty:
                     self._logger.debug( Fore.RED + "lbc_BDD self._q_documents queue Empty" + Fore.RESET )
                 self._logger.debug(Fore.RED + "Worker sleep 1" + Fore.RESET)
-                time.sleep(0.05) #FIXME
+                #time.sleep(0.15) #FIXME
         self._logger.debug(Fore.RED + "Finished or stopped BDD_file loop"+ Fore.RESET)
 
 

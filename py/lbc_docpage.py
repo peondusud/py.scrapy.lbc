@@ -5,6 +5,7 @@ import logging
 from colorama import Fore, Back, Style
 import datetime
 import requests
+from tornado.httpclient import AsyncHTTPClient
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
 
@@ -39,12 +40,16 @@ class DocPage(Process):
 
     def worker(self ):
         self.get_url_from_q()
-        page = self.fetch()
-        #self._logger.debug( "page {}".format( page))
-        if ( page is not None ) or  (not page) :
-            self.scrap( page )
-        else:
-            self._logger.error( "Worker self.page empty or None" )
+        #page = self.fetch()
+        page = self.async_fetch()
+        self._logger.info( "page {}".format( page))
+        while 1:
+            if ( page is not None ) :
+                self._logger.info( "page {}".format( page))
+                self.scrap( page )
+                return 0
+            else:
+                self._logger.debug( "Worker page empty or None" )
 
 
     def get_url_from_q(self):
@@ -54,6 +59,20 @@ class DocPage(Process):
             #self.q_doc_urls.task_done()
         except multiprocessing.Empty:
             self._logger.debug("Fetch self.docPage_url queue Empty:" )
+
+
+
+    def async_fetch(self):
+        try:
+            http_client = AsyncHTTPClient()
+            def handle_response(response):
+                return str(response.body)
+            http_client.fetch( self.docPage_url, callback=handle_response)
+        except httpclient.HTTPError as e:
+            self._logger.error("HTTP request {}".format(e) )
+            self._logger.debug("HTTP request {}".format(e), exc_info=1)
+            return self.async_fetch()
+
 
     def fetch(self):
         try:
