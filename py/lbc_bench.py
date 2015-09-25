@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 from colorama import Fore, Back, Style
-import datetime
+
 
 import requests
 from urllib.parse import urlparse
@@ -18,12 +18,16 @@ from collections import namedtuple, deque
 import threading
 import itertools
 import timeit
+import time
+import datetime
 #from multiprocessing import Process, Value, Array, Pool
 
-from lbc_FrontPage import *
-from lbc_DocPage import *
-from lbc_BDD import *
-from lbc_items import *
+from lbc_frontpage import *
+from lbc_docpage import *
+from lbc_bdd import *
+from lbc_item import *
+from tornado.httpclient import AsyncHTTPClient
+import tornado.ioloop
 
 
 
@@ -49,10 +53,42 @@ def one_iter_lbc():
 
 
 
+def bench_tornado_async():
+    #http://tornado.readthedocs.org/en/latest/guide/async.html
+    number = 20000
+
+    start = datetime.datetime.now()
+
+    def handle_request(response):
+        if response.error:
+            print("Error:", response.error)
+        else:
+            l.append(1)
+            print(len(l))
+            #print(len(response.body))
+            if len(l) == number:
+                tornado.ioloop.IOLoop.instance().stop()
+            if datetime.datetime.now() - start == 60:
+                tornado.ioloop.IOLoop.instance().stop()
+
+    http_client = AsyncHTTPClient()
+    http_client.configure( None,
+                            defaults=dict(user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0"),
+                            max_clients=20localocl)
+
+    l = []
+    for elem in range(number):
+
+        http_client.fetch("http://www.leboncoin.fr/", method='GET', callback=handle_request)
+    tornado.ioloop.IOLoop.instance().start()
+    print('Done')
+
+
 
 
 if __name__ == '__main__':
 
     logging.basicConfig( level=logging.INFO)
     logger = logging.getLogger(__name__)
-    bench_LBC()
+    #bench_LBC()
+    bench_tornado_async()

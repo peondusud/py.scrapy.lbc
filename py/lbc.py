@@ -10,7 +10,7 @@ import signal
 import sys
 from colorama import Fore, Back, Style
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode, urljoin
-from lbc_orchestrators_thread import LBC_Orchestrator
+from lbc_orchestrators import LBC_Orchestrator
 
 
 
