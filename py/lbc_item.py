@@ -8,6 +8,7 @@ import logging
 import json
 import re
 from collections import namedtuple
+from lxml import etree
 
 Document_Identifier = namedtuple( "Document_Identifier", [ "doc_url", "ad", "subcat" ])
 Document_subcategory = namedtuple( "Document_subcategory", [ "subcat", "titre", "region", "img_urls", "desc" ])
@@ -16,6 +17,28 @@ Document_Price = namedtuple( "Document_Price", [ "price_currency", "price", "urg
 Document_Localisation = namedtuple( "Document_Localisation", ["city", "cp", "location" ])
 Document_Criterias = namedtuple( "Document_Criterias", [ "criterias_dict" ])
 Document_Criterias_From_JS = namedtuple( "Document_Criterias_From_JS", [ "criterias_js_dict" ])
+
+titre_x =         etree.XPath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
+header_path_x =   etree.XPath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')
+img_urls_x =      etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]/meta/@content')
+description_x  =  etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
+uploader_url_x =  etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/@href')
+uploader_name_x = etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/text()')
+upload_date_x =   etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/text()')
+price_currency_x = etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')
+prix_x =          etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')
+urgent_x =        etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
+city_l_x =        etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
+cp_x =            etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
+latitude_x =      etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="latitude"]/@content')
+longitude_x =     etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="longitude"]/@content')
+criterias_x =     etree.XPath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
+table_header_x =  etree.XPath('th/text()')
+table_data_x =    etree.XPath('td/text()')
+
+noscript_x = etree.XPath('td/noscript/a/text()')
+js_var_x =  etree.XPath('/html/body/script[1]/text()')
+js_var_regex = re.compile('\s\s(\w+)\s:\s"(.+)",?')
 
 def document_identifier_factory( doc_url ):
     logger = logging.getLogger(__name__)
@@ -39,7 +62,8 @@ def  document_subcategory_factory( tree ):
     img_urls = ""
     desc = ""
     try:
-        titre = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
+        #titre = tree.xpath('/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
+        titre = titre_x(tree)
         if  titre != []:
             titre = titre[0]
         else:
@@ -47,7 +71,9 @@ def  document_subcategory_factory( tree ):
     except IndexError:
         logger.error( "document_subcategory_factory IndexError", exc_info=True )
         logger.debug( "document_subcategory_factory titre  {}".format( titre ) )
-    header_path = tree.xpath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')
+
+    #header_path = tree.xpath('/html/body/div/div[2]/div/div[3]/div/span[@class="fine_print"]/a[@class="nohistory"]/text()')
+    header_path = header_path_x(tree)
     try:
         if  header_path != []:
             region = header_path[1]
@@ -58,10 +84,13 @@ def  document_subcategory_factory( tree ):
     logger.debug( "document_subcategory_factory region  {}".format( region ) )
     logger.debug( "document_subcategory_factory subcat  {}".format( subcat ) )
 
-    img_urls = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]/meta/@content')
+    #img_urls = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]/meta/@content')
+    img_urls = img_urls_x(tree)
     logger.debug( "document_subcategory_factory img_urls  {}".format( img_urls ) )
 
-    description  = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
+    #description  = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
+    description = description_x(tree)
+
     def sanitize_description(description):
         sanitize_desc = description.strip()
         sanitize_desc.replace("\n","")
@@ -83,16 +112,21 @@ def document_uploader_factory( tree ):
     uploader_ispro = 0
     uploader_pro_siren = ""
 
-    uploader_url = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/@href')[0]
+    #uploader_url = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/@href')[0]
+    uploader_url = uploader_url_x(tree)
+    uploader_url =  uploader_url[0]
     logger.debug( "document_uploader_factory uploader_url {}".format( uploader_url ) )
 
     uploader_id = int( uploader_url.split("id=")[1] )
     logger.debug( "document_uploader_factory uploader_id {}".format( uploader_id ) )
 
-    uploader_name = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/text()')[0]
+    #uploader_name = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/a/text()')[0]
+    uploader_name = uploader_name_x(tree)
+    uploader_name = uploader_name[0]
     logger.debug( "document_uploader_factory uploader_name {}".format( uploader_name ) )
 
-    upload_date = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/text()')
+    #upload_date = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]/text()')
+    upload_date = upload_date_x(tree)
     upload_date = "".join( upload_date ).strip()
 
     matchObj = re.match( "Numéro Siren : (\d{9})\s+?-", upload_date )
@@ -111,19 +145,22 @@ def document_price_factory(tree):
     price = ""
     urgent = ""
     try:
-        price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')
+        #price_currency = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/meta/@content')
+        price_currency = price_currency_x(tree)
         if  price_currency != []:
             price_currency = price_currency[0]
         else:
             price_currency = ""
 
-        prix = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')
+        #prix = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="price"]/@content')
+        prix = prix_x(tree)
         if  prix != []:
             prix = prix[0]
             prix = int(prix )
         else:
             prix = ""
-        urgent = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
+        #urgent = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()')
+        urgent = urgent_x(tree)
         if urgent:
            urgent = 1
         else:
@@ -146,7 +183,8 @@ def document_localisation_factory(tree):
     longitude = ""
     location= []
     try:
-        city_l = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
+        #city_l = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="addressLocality"]/text()')
+        city_l = city_l_x(tree)
         logger.debug( "document_localisation_factor city  {}".format( city_l ))
         if  city_l != []:
             city = city_l[0]
@@ -157,7 +195,8 @@ def document_localisation_factory(tree):
        logger.debug( "document_localisation_factor city  {}".format( city_l ))
 
     try:
-        cp = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
+        #cp = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]/tbody[@itemtype="http://schema.org/PostalAddress"]/tr/td[@itemprop="postalCode"]/text()')
+        cp = cp_x(tree)
         if  cp != []:
             cp = cp[0]
             cp =  int(cp)
@@ -168,7 +207,8 @@ def document_localisation_factory(tree):
        logger.debug( "document_localisation_factor cp  {}".format( cp ))
 
     try:
-        latitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="latitude"]/@content')
+        #latitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="latitude"]/@content')
+        latitude = latitude_x(tree)
         if  latitude != []:
             latitude = latitude[0]
         else:
@@ -179,11 +219,12 @@ def document_localisation_factory(tree):
         logger.debug( "document_localisation_factor latitude  {}".format( latitude ))
 
     try:
-        longitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="longitude"]/@content')
+        #longitude = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[@itemtype="http://schema.org/Place"]//meta[@itemprop="longitude"]/@content')
+        longitude = longitude_x(tree)
         if  longitude != []:
             longitude = longitude[0]
         else:
-            latitude = ""
+            longitude = ""
         logger.debug( "document_localisation_factor longitude  {}".format( longitude ))
     except IndexError as e:
         logger.error( "document_localisation_factory latitude IndexError", exc_info=True  )
@@ -205,8 +246,10 @@ def document_criterias_factory( tree ):
     criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
     #criterias = tree.xpath('/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table/tr')
 
+    criterias = criterias_x(tree)
     for tr in criterias:
-        header = tr.xpath('th/text()')
+        #header = tr.xpath('th/text()')
+        header = table_header_x(tr)
         try:
             header = header[0]
             header = header.split(" : ")[0]
@@ -215,40 +258,42 @@ def document_criterias_factory( tree ):
         except IndexError as e:
             logger.debug( "document_criterias_factory header IndexError" )
 
-        value = tr.xpath('td/text()')
+        #table_data = tr.xpath('td/text()')
+        table_data = table_data_x(tr)
         try:
-            value = value[0]
-            value = value.strip()
+            table_data = table_data[0]
+            table_data = table_data.strip()
         except IndexError as e:
             logger.debug( "document_criterias_factory value IndexError" )
 
-        if not value:
-            value = tr.xpath('td/noscript/a/text()')
-            logger.debug( "document_criterias_factory value links : ---{}----".format(value) )
+        if not table_data:
+            #table_data = tr.xpath('td/noscript/a/text()')
+            table_data = noscript_x(tr)
+            logger.debug( "document_criterias_factory value links : ---{}----".format(table_data) )
             try:
-                value = value[0]
+                table_data = table_data[0]
             except IndexError as e:
                 logger.debug( "document_criterias_factory value links IndexError" )
 
-        criterias_dict[header] = value
-        #criterias_dict.update({ header : value })
-        logger.debug( "document_criterias_factory {} : _{}_".format( header , value ))
+        criterias_dict[header] = table_data
+        #criterias_dict.update({ header : table_data })
+        logger.debug( "document_criterias_factory {} : _{}_".format( header , table_data ))
 
     logger.debug( "document_criterias_factory criterias_dict  {}".format( criterias_dict ))
     return Document_Criterias( criterias_dict )
 
 def document_criterias_factory_from_js( tree ):
     logger = logging.getLogger(__name__)
-    js_var = tree.xpath('/html/body/script[1]/text()')
+    #js_var = tree.xpath('/html/body/script[1]/text()')
+    js_var = js_var_x(tree)
     js_var = js_var[0]
     js_var = str( js_var.strip() )
     logger.debug("document_criterias_factory_from_js js_var  {}".format(js_var) )
 
-    pattern = '\s\s(\w+)\s:\s"(.+)",?'
-    prog = re.compile(pattern)
+
     criterias_js_dict = {}
     for line in js_var.splitlines():
-        result = prog.search(line )
+        result = js_var_regex.search(line )
         if result is not None:
             #print( result.groups() )
             key = result.group(1)
@@ -296,7 +341,7 @@ class LeboncoinItem():
             except KeyError:
                 self._logger.debug("Remove empty key  {}".format(remove_key) )
         self._logger.debug( "LeboncoinItem  dict : {}".format( self._dict ))
-        
+
 
     def json_it(self):
         return json.dumps( self._dict )

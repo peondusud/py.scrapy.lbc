@@ -40,16 +40,16 @@ class DocPage(Process):
 
     def worker(self ):
         self.get_url_from_q()
-        #page = self.fetch()
-        page = self.async_fetch()
+        page = self.fetch()
+        #page = self.async_fetch()
         self._logger.info( "page {}".format( page))
-        while 1:
-            if ( page is not None ) :
-                self._logger.info( "page {}".format( page))
-                self.scrap( page )
-                return 0
-            else:
-                self._logger.debug( "Worker page empty or None" )
+
+        if ( page is not None ) :
+            self._logger.info( "page {}".format( page))
+            self.scrap( page )
+            return 0
+        else:
+            self._logger.debug( "Worker page empty or None" )
 
 
     def get_url_from_q(self):
