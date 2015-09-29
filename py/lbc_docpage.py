@@ -9,13 +9,11 @@ from tornado.httpclient import AsyncHTTPClient
 from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
 
-#from threading import Thread, Event
 from multiprocessing import Process, Value, Array, Pool, Queue, Event
 import time
 
 from lbc_item import LeboncoinItem
 
-#class DocPage(Thread):
 class DocPage(Process):
 
     def __init__(self, q_doc_urls, q_documents, q_stats_doc ):
@@ -26,30 +24,15 @@ class DocPage(Process):
         self.q_doc_urls = q_doc_urls
         self.q_documents = q_documents
         self._event = Event()
-
-        #google_user_agent = { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'}
-
-        self._http_headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
-        'Referer' : 'http://www.leboncoin.fr/',
-        'Connection' : 'keep-alive' }
         self._logger.debug("_session created" )
 
 
     def worker(self ):
-        self.get_url_from_q()
-        page = self.fetch()
-        #page = self.async_fetch()
-        self._logger.info( "page {}".format( page))
-
-        if ( page is not None ) :
+    	while 1:
+            self.get_url_from_q()
             self._logger.info( "page {}".format( page))
             self.scrap( page )
-            return 0
-        else:
-            self._logger.debug( "Worker page empty or None" )
+            self._logger.debug( "scap page done" )
 
 
     def get_url_from_q(self):
@@ -60,35 +43,6 @@ class DocPage(Process):
         except multiprocessing.Empty:
             self._logger.debug("Fetch self.docPage_url queue Empty:" )
 
-
-
-    def async_fetch(self):
-        try:
-            http_client = AsyncHTTPClient()
-            def handle_response(response):
-                return str(response.body)
-            http_client.fetch( self.docPage_url, callback=handle_response)
-        except httpclient.HTTPError as e:
-            self._logger.error("HTTP request {}".format(e) )
-            self._logger.debug("HTTP request {}".format(e), exc_info=1)
-            return self.async_fetch()
-
-
-    def fetch(self):
-        try:
-            self._logger.debug("Handling request {}".format( self.docPage_url ) )
-            response = requests.get( self.docPage_url , timeout=3, headers=self._http_headers)
-            if response.status_code != requests.codes.ok:
-                response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            self._logger.error("HTTP request {}".format(e) )
-            self._logger.debug("HTTP request {}".format(e), exc_info=1)
-            time.sleep(0.3)
-            self._logger.info("HTTP request Relauching fetch")
-            return self.fetch()
-        self._logger.debug(  "Fetch headers sent to server : {}".format( response.request.headers )  )
-        self._logger.debug(  "Fetch headers sent from server : {}".format( response.headers)  )
-        return response.text
 
     def scrap(self, page):
         tree = html.fromstring( page )

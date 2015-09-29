@@ -32,14 +32,7 @@ class FrontPage(Process):
 
         self.allow_domains  = allow_domains
 
-        #google_user_agent = { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'}
 
-        self._http_headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
-        'Referer' : 'http://www.leboncoin.fr/',
-        'Connection' : 'keep-alive' }
 
         self._logger.debug("_session created" )
 
@@ -54,30 +47,9 @@ class FrontPage(Process):
             self._logger.debug(" self.frontPage_url queue Empty" )
             return
 
-        page = self.fetch( frontPage_url )
-        #self._logger.debug( "page {}".format( page ))
-        if (page is not None ) or  (not page) :
-            self._logger.debug("page No empty" )
-            self.scrap(page)
-        else:
-            self._logger.error( "page empty or None" )
+        self.scrap(page)
+        self._logger.error( "scrap Done" )
 
-    def fetch(self, frontPage_url):
-        try:
-            self._logger.debug( "Handling request : {}".format( frontPage_url) )
-            response = requests.get( frontPage_url , timeout=3, headers=self._http_headers)
-            if response.status_code != requests.codes.ok:
-                response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            self._logger.error("HTTP request {}".format(e) )
-            self._logger.debug("HTTP request {}".format(e), exc_info=1)
-            time.sleep(0.3)
-            self._logger.info("HTTP request Relauching fetch")
-            return self.fetch()
-
-        self._logger.debug( "Fetch headers sent to server : {}".format( response.request.headers)  )
-        self._logger.debug( "Fetch headers sent from server : {}".format( response.headers)  )
-        return response.text
 
     def scrap(self, page):
         tree = html.fromstring( page )
