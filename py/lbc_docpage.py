@@ -2,61 +2,58 @@
 # -- coding: utf-8 --
 
 import logging
-from colorama import Fore, Back, Style
 import datetime
-import requests
-from tornado.httpclient import AsyncHTTPClient
-from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
-
-
-from multiprocessing import Process, Value, Array, Pool, Queue, Event
 import time
-
+import os
+from colorama import Fore, Back, Style
+from lxml import html
+from multiprocessing import Process, Value, Array, Pool, Queue, Event
 from lbc_item import LeboncoinItem
 
 class DocPage(Process):
 
-    def __init__(self, q_doc_urls, q_documents, q_stats_doc ):
+    def __init__(self, q_doc_response_page, q_documents, q_stats_doc):
         super().__init__()
         self._logger = logging.getLogger(__name__)
-
-        self.docPage_url = ""
-        self.q_doc_urls = q_doc_urls
+        self.q_doc_response_page = q_doc_response_page
         self.q_documents = q_documents
+        self.q_stats_doc  = q_stats_doc
         self._event = Event()
         self._logger.debug("_session created" )
 
 
     def worker(self ):
     	while 1:
-            self.get_url_from_q()
-            self._logger.info( "page {}".format( page))
-            self.scrap( page )
-            self._logger.debug( "scap page done" )
+            doc_response_page = self.get_doc_response_page_from_q()
+            self._logger.info( "doc_response_page {}".format( doc_response_page ))
+            self.scrap( doc_response_page )
+            self._logger.debug( "scap response_page done" )
 
 
-    def get_url_from_q(self):
+    def get_doc_response_page_from_q(self):
         try:
-            self.docPage_url = self.q_doc_urls.get( block=True, timeout=None )
-            self._logger.info( Fore.CYAN + "Document URL to Fetch : {}".format( self.docPage_url ) + Fore.RESET )
-            #self.q_doc_urls.task_done()
+            doc_response_page = self.q_doc_response_page.get( block=True, timeout=None)
+            self._logger.info( Fore.BLUE + "DOC PAGE : {}".format( doc_response_page ) + Fore.RESET )
+            #.self.q_doc_response_page.task_done()
+            return doc_response_page
         except multiprocessing.Empty:
-            self._logger.debug("Fetch self.docPage_url queue Empty:" )
+            self._logger.exception(" self.q_doc_response_page queue Empty" )
+            #os._exit(1)
 
-
-    def scrap(self, page):
-        tree = html.fromstring( page )
-        lbc_item = LeboncoinItem( self.docPage_url, tree)
+    def scrap(self, response_page):
+        #tree = html.fromstring( response_page.body )
+        tree = html.parse( response_page.buffer )
+        lbc_item = LeboncoinItem( response_page.request.url, tree)
         self._logger.debug( "scrap lbc_item :".format( ( lbc_item) ) )
         self.add_Queue_Documents( lbc_item.json_it()  )
 
-    def add_Queue_Documents(self,  lbc_item):
+    def add_Queue_Documents( self, lbc_item):
         #add doc url to doc queue
         try:
             self._logger.debug( "add_Queue_Documents : Try Add to q_documents lbc_item ".format( lbc_item ) )
             self.q_documents.put( lbc_item, block=True, timeout=None)
         except multiprocessing.Full:
-            self._logger.debug("add_Queue_Documents : self.q_documents queue Full" )
+            self._logger.exception("add_Queue_Documents : self.q_documents queue Full" )
 
 
     def start(self):
@@ -72,7 +69,6 @@ class DocPage(Process):
             try:
                 self._logger.debug("calling worker")
                 self.worker()
-                #time.sleep(1)   #FIXME
             except Exception as e:
                 self._logger.debug( "exception {} DocPage loop".format(e) )
                 self._logger.exception(e)

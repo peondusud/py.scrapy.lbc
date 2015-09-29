@@ -10,12 +10,10 @@ import logging
 from colorama import Fore, Back, Style
 import datetime
 
-
-#from queue import Queue, Full, Empty
-#from threading import Thread, Event
 from multiprocessing import Process, Value, Array, Pool, Queue
 
 from lbc_frontpage import FrontPage
+from lbc_fetch import DocFetcher
 from lbc_docpage import DocPage
 from lbc_bdd import BDD_file
 
@@ -39,7 +37,10 @@ class LBC_Orchestrator():
                 self.logger.debug(" self.q_frontPageUrls queue Full" )
 
         self._q_docPageUrls = Queue()
-        self._logger.debug("LBC_Orchestrator _q_docPageUrls  created" )
+        self._logger.debug("LBC_Orchestrator _q_docPageUrls created" )
+
+        self._q_doc_response_page = Queue()
+        self._logger.debug("LBC_Orchestrator _q_doc_response_page  created" )
 
         self._q_documents = Queue()
         self._logger.debug("LBC_Orchestrator _q_documents  created" )
@@ -61,8 +62,12 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator BDD_orchestrator initialized" )
 
         self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialize" )
-        self._docPage_center = DocPage_orchestrator( self._q_docPageUrls, self._q_documents, self.q_stats_doc, self.concurrent_doc)
+        self._docPage_center = DocPage_orchestrator( self._q_doc_response_page, self._q_documents, self.q_stats_doc, 2 ) #FIXME
         self._logger.debug("LBC_Orchestrator DocPage_orchestrator initialized" )
+
+        self._logger.debug("LBC_Orchestrator DocFetcher_orchestrator initialize" )
+        self._docFetcher_center = DocFetcher_orchestrator( self._q_docPageUrls, self._q_doc_response_page, self.q_stats_doc, self.concurrent_doc)
+        self._logger.debug("LBC_Orchestrator DocFetcher_orchestrator initialized" )
 
         self._logger.debug("LBC_Orchestrator FrontPage_orchestrator initialize" )
         self._frontPage_center = FrontPage_orchestrator( self._q_frontPageUrls,  self._q_docPageUrls, self.q_stats_front, allow_domains )
@@ -78,6 +83,9 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _docPage_center.run()" )
         self._docPage_center.run()
 
+        self._logger.debug("LBC_Orchestrator Launch _docFetcher_center.run()" )
+        self._docFetcher_center.run()
+
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.run()" )
         self._frontPage_center.run()
 
@@ -92,8 +100,12 @@ class LBC_Orchestrator():
         self._logger.debug("LBC_Orchestrator Launch _frontPage_center.stop()" )
         self._frontPage_center.stop()
 
+        self._logger.debug("LBC_Orchestrator Launch _docFetcher_center.stop()" )
+        self._docFetcher_center.stop()
+
         self._logger.debug("LBC_Orchestrator Launch _docPage_center.stop()" )
         self._docPage_center.stop()
+
 
         self._logger.debug("LBC_Orchestrator Launch _bdd_center.stop()" )
         self._bdd_center.stop()
@@ -102,9 +114,8 @@ class LBC_Orchestrator():
         #self.t_stat.stop() #FIXME
 
 
-
     def stats(self):
-        self.t_stat = Process(target=self.updateStatistics)
+        self.t_stat = Process( target = self.updateStatistics)
         self.t_stat.daemon = True
         self.t_stat.start()
 
@@ -114,7 +125,6 @@ class LBC_Orchestrator():
         last_value = 0
         nb_docs_saved = 0
         next_call = time.time()
-        print("ca rentre")
         while 1:
             try:
                 if self.q_stats_bdd.qsize() > 0:
@@ -151,10 +161,10 @@ class BDD_orchestrator():
 
 
 class DocPage_orchestrator():
-    def __init__(self,  q_doc_urls, q_documents, q_stats_doc, concurrent_doc):
+    def __init__(self, q_lbc_response_page, q_documents, q_stats_doc, nb_worker):
         self._logger = logging.getLogger(__name__)
-        self._q_doc_urls = q_doc_urls
-        self._logger.debug("_q_doc_urls created" )
+        self._q_lbc_response_page = q_lbc_response_page
+        self._logger.debug("_q_lbc_response_page created" )
 
         self._q_documents = q_documents
         self._logger.debug("_q_documents created" )
@@ -162,25 +172,50 @@ class DocPage_orchestrator():
         self._q_stats_doc = q_stats_doc
         self._logger.debug("_q_stats_doc created" )
 
-        self.concurrent_doc = concurrent_doc
-        #equals Nmber of concurent connection
+        self.nb_worker = nb_worker #FIXME
 
         self.pool_DocPageWorkers = []
         self._logger.debug("initialize pool_DocPageWorkers" )
-        for a in range( self.concurrent_doc ):
-            doc_page_thread = DocPage( self._q_doc_urls, self._q_documents , q_stats_doc )
-            #doc_page_thread.daemon = True
-            self._logger.debug("Create a new doc_page_thread instance" )
-            self.pool_DocPageWorkers.append( doc_page_thread )
+        for a in range( self.nb_worker ):
+            doc_page_process = DocPage( self._q_lbc_response_page, self._q_documents , q_stats_doc )
+            self._logger.debug("Create a new doc_page_process instance" )
+            self.pool_DocPageWorkers.append( doc_page_process )
         self._logger.debug("pool_DocPageWorkers Initialized" )
 
     def run(self):
-        for doc_page_thread in self.pool_DocPageWorkers:
-            doc_page_thread.start()
+        for doc_page_process in self.pool_DocPageWorkers:
+            doc_page_process.start()
 
     def stop(self):
-        for doc_page_thread in self.pool_DocPageWorkers:
-            doc_page_thread.stop()
+        for doc_page_process in self.pool_DocPageWorkers:
+            doc_page_process.stop()
+
+
+class DocFetcher_orchestrator():
+    def __init__(self, q_doc_urls, q_doc_response_page, q_stats_doc, concurrent_doc):
+        self._logger = logging.getLogger(__name__)
+        self._q_doc_urls = q_doc_urls
+        self._logger.debug("_q_doc_urls created" )
+
+        self._q_doc_response_page = q_doc_response_page
+        self._logger.debug("_q_doc_response_page created" )
+
+        self._q_stats_doc = q_stats_doc
+        self._logger.debug("_q_stats_doc created" )
+
+        self.concurrent_doc = concurrent_doc
+        #equals Nmber of concurent connection
+
+        self._logger.debug("initialize DocFetcher" )
+
+        self.doc_page_process = DocFetcher( self._q_doc_urls, self._q_doc_response_page, q_stats_doc )
+        self._logger.debug("Create a DocFetcher process instance" )
+
+    def run(self):
+        self.doc_page_process.start()
+
+    def stop(self):
+        self.doc_page_process.stop()
 
 class FrontPage_orchestrator():
 

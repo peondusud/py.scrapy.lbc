@@ -8,13 +8,14 @@ from colorama import Fore, Back, Style
 import datetime
 import requests
 from urllib.parse import urlparse
-from lxml import html	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
+from lxml import html, etree	 #apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 
-#from threading import Thread, Event
+
 from multiprocessing import Process, Value, Array, Pool, Queue, Event
 
+content_urls_x = etree.XPath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
+prev_nxt_url_x = etree.XPath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]/a/@href')
 
-#class FrontPage(Thread):
 class FrontPage(Process):
 
     def __init__(self, q_front_urls , q_doc_urls, q_stats_front , allow_domains ):
@@ -31,11 +32,15 @@ class FrontPage(Process):
         self._logger.debug("_q_stats_front created" )
 
         self.allow_domains  = allow_domains
-
-
+        #google_user_agent = { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'}
+        self._http_headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Referer' : 'http://www.leboncoin.fr/',
+        'Connection' : 'keep-alive' }
 
         self._logger.debug("_session created" )
-
         self._event = Event()
 
     def worker(self ):
@@ -43,22 +48,46 @@ class FrontPage(Process):
             frontPage_url = self._q_front_urls.get( block=True, timeout=None)
             self._logger.info( Fore.BLUE + "FRONT URL to Fetch : {}".format( frontPage_url ) + Fore.RESET )
             #self._q_front_urls.task_done()
+            page = self.fetch( frontPage_url )
+            #self._logger.debug( "page {}".format( page ))
+            if (page is not None ) or  (not page) :
+                self._logger.debug("page Is Not empty" )
+                self.scrap(page)
+            else:
+                self._logger.error( "page empty or None" )
         except multiprocessing.Empty:
-            self._logger.debug(" self.frontPage_url queue Empty" )
+            self._logger.exception(" self.frontPage_url queue Empty" )
             return
 
-        self.scrap(page)
-        self._logger.error( "scrap Done" )
+
+    def fetch(self, frontPage_url):
+        try:
+            self._logger.debug( "Handling request : {}".format( frontPage_url) )
+            response = requests.get( frontPage_url , timeout=3, headers=self._http_headers)
+            if response.status_code != requests.codes.ok:
+                response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            self._logger.error("HTTP request {}".format(e) )
+            self._logger.debug("HTTP request {}".format(e), exc_info=1)
+            time.sleep(0.3)
+            self._logger.info("HTTP request Relauching fetch")
+            return self.fetch()
+
+        self._logger.debug( "Fetch headers sent to server : {}".format( response.request.headers)  )
+        self._logger.debug( "Fetch headers sent from server : {}".format( response.headers)  )
+        return response.text
 
 
-    def scrap(self, page):
-        tree = html.fromstring( page )
+    def scrap(self, response_page):
+        tree = html.fromstring( response_page )
+        #tree = html.parse( response_page.buffer )
         self.get_docUrls_fromTree( tree )
         self.get_nextUrl_fromTree( tree )
 
     def get_docUrls_fromTree(self , tree):
-        # retrieve 25 elems doc page url
-        content_urls = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
+        # retrieve 35 elems doc page url
+        #content_urls = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href')
+        content_urls = content_urls_x(tree)
         #remove shity parameter in content_urls
         wipe_url = lambda x : x.split("?")[0]
         content_urls_wipe = list(map(wipe_url, content_urls))
@@ -67,7 +96,8 @@ class FrontPage(Process):
         self._logger.debug( "content_urls_wipe : {}".format( content_urls_wipe ))
 
     def get_nextUrl_fromTree(self, tree):
-        prev_nxt_url = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]/a/@href')
+        #prev_nxt_url = tree.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]/a/@href')
+        prev_nxt_url = prev_nxt_url_x(tree)
         next_url = prev_nxt_url[-1]
         nb_page = next_url.split("?o=")[-1]
         self._logger.debug( "next_url : {}".format( next_url ))
