@@ -92,7 +92,7 @@ class FrontPage(Process):
         wipe_url = lambda x : x.split("?")[0]
         content_urls_wipe = list(map(wipe_url, content_urls))
         self.add_Queue_DocUrls( content_urls_wipe )
-        self._logger.debug( "content_urls : {}".format( content_urls ))
+        #self._logger.debug( "content_urls : {}".format( content_urls ))
         self._logger.debug( "content_urls_wipe : {}".format( content_urls_wipe ))
 
     def get_nextUrl_fromTree(self, tree):
