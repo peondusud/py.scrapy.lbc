@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+
+
 import scrapy
 
 
-from leboncoin.items import LeboncoinItem
+#from leboncoin.items import LeboncoinItem
+from lbc_item import LeboncoinItem
 
 class LbcSpider(scrapy.Spider):
     name = "lbc"
@@ -12,6 +15,13 @@ class LbcSpider(scrapy.Spider):
         #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/',
         'http://www.leboncoin.fr/_multimedia_/offres/ile_de_france/occasions/',
     )
+    l = LeboncoinItem()
+
+    def __init__(self, *args, **kwargs):
+        super(LbcSpider, self).__init__(*args, **kwargs)
+
+        self.l = LeboncoinItem()
+
 
     def parse(self, response):
 
@@ -24,23 +34,23 @@ class LbcSpider(scrapy.Spider):
        nb_page = next_url.split("?o=")[-1]
        last_page = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li/a/@href').extract()[-1].split("?o=")[-1]
        if nb_page == last_page:
-           exit 
+            raise CloseSpider('End - Done') #must close spider
 
-       yield scrapy.Request(next_url ,callback=self.parse)        
+       yield scrapy.Request(next_url ,callback=self.parse)
 
     def parse_page(self, response):
-
+       """ 
        lbc_page = LeboncoinItem()
        
        lbc_page['doc_category'] = response.url.split("/")[3]
        lbc_page['doc_id'] = int(response.url.split("/")[-1].split(".htm")[0])
        lbc_page['doc_url'] = response.url
-
        
+
        content = response.xpath('/html/body/div/div[2]/div/div[3]')
        #content = response.xpath('/html/body/div[@class="page_align"]/div[@class="page_width"]/div[@id="ContainerMain"]/div[@class="content-border"]')
-     
-       #tire  
+
+       #titre
        #titre = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="header_adview"]/h1/text()').extract()
        lbc_page['title'] = content.xpath('div/div[1]/div[1]/h1/text()').extract()[0]
 
@@ -61,9 +71,9 @@ class LbcSpider(scrapy.Spider):
 
        upload = content2.xpath('div[@class="upload_by"]')
        #upload = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]')
-       lbc_page['user_url'] = upload.xpath('a/@href').extract()[0] 
+       lbc_page['user_url'] = upload.xpath('a/@href').extract()[0]
        lbc_page['user_id'] =  int(lbc_page['user_url'].split("id=")[1])
-       lbc_page['user_name'] = upload.xpath('a/text()').extract()[0] 
+       lbc_page['user_name'] = upload.xpath('a/text()').extract()[0]
        lbc_page['upload_date'] = "".join(upload.xpath('text()').extract()).strip().replace("- Mise en ligne le ","").replace(u"à ","").replace(".","")
 
        tmp =  content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td')
@@ -75,7 +85,7 @@ class LbcSpider(scrapy.Spider):
                lbc_page['urgent'] = 1
            else:
                lbc_page['urgent'] = 0
-	
+
        except IndexError:
            pass
 
@@ -98,7 +108,7 @@ class LbcSpider(scrapy.Spider):
 
 
        criterias = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams criterias"]/table//tr')
-       
+
        dic = dict()
        for row in criterias:
            header = u"".join( map(lambda x: x.strip().replace(" :","") ,row.xpath('th/text()').extract()))
@@ -110,5 +120,13 @@ class LbcSpider(scrapy.Spider):
 
        description  = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()').extract()
        lbc_page['desc'] = u" ".join( map(lambda x: x.strip().replace("\n","").replace("  ","") ,description))
-       
+
        return lbc_page
+       """
+       #print(dir(response))
+       #l = LeboncoinItem()
+       #print(response.encoding)
+       #ret = l.get(response.url, response.body.encode(response.encoding)  )
+       ret = self.l.get(response.url, response.body_as_unicode() )
+       
+       return ret
