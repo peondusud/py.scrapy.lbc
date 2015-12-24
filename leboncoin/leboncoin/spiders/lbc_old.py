@@ -3,31 +3,30 @@
 
 import scrapy
 
+from scrapy.loader import ItemLoader
+from leboncoin.items import LeboncoinItem
 
-from lbc_item import LeboncoinItem
 
 class LbcSpider(scrapy.Spider):
-    name = "lbc"
+    name = "lbc_old"
     allowed_domains = ["leboncoin.fr"]
     start_urls = (
         #'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/',
         #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/',
         'http://www.leboncoin.fr/_multimedia_/offres/ile_de_france/occasions/',
     )
-    l = LeboncoinItem()
 
     def __init__(self, *args, **kwargs):
         super(LbcSpider, self).__init__(*args, **kwargs)
-
-        self.l = LeboncoinItem()
 
 
     def parse(self, response):
 
        urls = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href').extract()
        for doc_url in urls:
-           #continue
+           #yield scrapy.Request(doc_url,callback=self.parse_page_loader)
            yield scrapy.Request(doc_url,callback=self.parse_page)
+
        nex = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]')
        next_url = nex.xpath('a/@href').extract()[-1]
        nb_page = next_url.split("?o=")[-1]
@@ -37,30 +36,27 @@ class LbcSpider(scrapy.Spider):
 
        yield scrapy.Request(next_url ,callback=self.parse)
 
-    def parse_page(self, response):
-       #print(dir(response))
-       #l = LeboncoinItem()
-       #print(response.encoding)
-       #ret = self.l.get(response.url, response.body.encode(response.encoding) )
-       ret = self.l.get(response.url, response.body )
-       #ret = self.l.get(response.url, response.body_as_unicode() )
-       
-       return ret
 
-       """
+    def parse_page_loader(self, response):
+        #l = ItemLoader(item=LeboncoinItem(), response=response)
+        l.add_xpath('title', '/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
+        l.add_xpath('content', '/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
+        #l.add_value('last_updated', 'today') # you can also use literal values
+        return l.load_item()
+
     def parse_page(self, response):
        lbc_page = LeboncoinItem()
-       
+
+
+
        lbc_page['doc_category'] = response.url.split("/")[3]
        lbc_page['doc_id'] = int(response.url.split("/")[-1].split(".htm")[0])
        lbc_page['doc_url'] = response.url
-       
+
 
        content = response.xpath('/html/body/div/div[2]/div/div[3]')
-       #content = response.xpath('/html/body/div[@class="page_align"]/div[@class="page_width"]/div[@id="ContainerMain"]/div[@class="content-border"]')
 
        #titre
-       #titre = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="header_adview"]/h1/text()').extract()
        lbc_page['title'] = content.xpath('div/div[1]/div[1]/h1/text()').extract()[0]
 
 
@@ -75,11 +71,9 @@ class LbcSpider(scrapy.Spider):
        content2 = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]')
 
        imgs = content2.xpath('div/div[@class="lbcImages"]')
-       #imgs = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div/div[@class="lbcImages"]')
        lbc_page['img_urls'] = imgs.xpath('meta/@content').extract()
 
        upload = content2.xpath('div[@class="upload_by"]')
-       #upload = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="upload_by"]')
        lbc_page['user_url'] = upload.xpath('a/@href').extract()[0]
        lbc_page['user_id'] =  int(lbc_page['user_url'].split("id=")[1])
        lbc_page['user_name'] = upload.xpath('a/text()').extract()[0]
@@ -131,5 +125,3 @@ class LbcSpider(scrapy.Spider):
        lbc_page['desc'] = u" ".join( map(lambda x: x.strip().replace("\n","").replace("  ","") ,description))
 
        return lbc_page
-       """
-

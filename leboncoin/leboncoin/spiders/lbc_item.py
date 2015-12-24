@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
 # -*- coding: utf-8 -*-
-
 
 
 import logging
@@ -220,7 +218,7 @@ def document_localisation_factory(tree):
         logger.error( "document_localisation_factory latitude IndexError", exc_info=True  )
         logger.debug( "document_localisation_factor longitude  {}".format( longitude ))
 
-    
+
     location = [ longitude, latitude]
     #print(location)
     #location = [ float(longitude), float(latitude)]
@@ -291,12 +289,12 @@ class LeboncoinItem():
 
     def __init__(self):
         self._logger = logging.getLogger(__name__)
-      
-       
-    def get(self, url, page_body): 
+
+
+    def get(self, url, page_body):
         #print(type(page_body))
-        #tree =  html.parse( BytesIO(page_body.encode('utf-8')))  
-        tree =  html.fromstring( page_body)  
+        #tree =  html.parse( BytesIO(page_body.encode('utf-8')))
+        tree =  html.fromstring( page_body)
         document_Identifier = document_identifier_factory( url )
         document_Subcategory = document_subcategory_factory( tree )
         document_Uploader = document_uploader_factory( tree )
@@ -313,7 +311,7 @@ class LeboncoinItem():
         dic.update( document_Price.__dict__ )
         dic.update( document_Criterias )
         dic.update( document_Criterias_from_js )
-   
+
         self.remove_blank(dic)
 
         return dic
