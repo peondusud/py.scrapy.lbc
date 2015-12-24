@@ -12,6 +12,7 @@ NEWSPIDER_MODULE = 'leboncoin.spiders'
 EXTENSIONS = {
     'scrapy.extensions.corestats.CoreStats': 500,
     'scrapy.extensions.logstats.LogStats': 500,
+    #'scrapy.telnet.TelnetConsole': 500,
     'scrapy.extensions.telnet.TelnetConsole': 500,
     'scrapy.extensions.closespider.CloseSpider': 500
 }
@@ -30,7 +31,7 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 8
 
 # http://doc.scrapy.org/en/latest/topics/feed-exports.html#storage-uri-parameters
 #FEED_URI = '/home/peon/%(name)s/%(time)s.json%'
-FEED_URI = '/home/peon/py.scrapy.lbc/leboncoin/test.json'
+FEED_URI = 'dump_lbc.json'
 FEED_FORMAT = 'jsonlines'
 
 #The maximum limit for Twisted Reactor thread pool size. This is common multi-purpose thread pool used by various Scrapy components.

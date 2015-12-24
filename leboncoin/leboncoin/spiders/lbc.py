@@ -39,7 +39,17 @@ class LbcSpider(scrapy.Spider):
        yield scrapy.Request(next_url ,callback=self.parse)
 
     def parse_page(self, response):
-       """ 
+       #print(dir(response))
+       #l = LeboncoinItem()
+       #print(response.encoding)
+       #ret = self.l.get(response.url, response.body.encode(response.encoding) )
+       ret = self.l.get(response.url, response.body )
+       #ret = self.l.get(response.url, response.body_as_unicode() )
+       
+       return ret
+
+       """
+    def parse_page(self, response):
        lbc_page = LeboncoinItem()
        
        lbc_page['doc_category'] = response.url.split("/")[3]
@@ -123,10 +133,4 @@ class LbcSpider(scrapy.Spider):
 
        return lbc_page
        """
-       #print(dir(response))
-       #l = LeboncoinItem()
-       #print(response.encoding)
-       #ret = l.get(response.url, response.body.encode(response.encoding)  )
-       ret = self.l.get(response.url, response.body_as_unicode() )
-       
-       return ret
+
