@@ -5,6 +5,8 @@ import scrapy
 
 from scrapy.loader import ItemLoader
 from leboncoin.items import LeboncoinItem
+from urlparse import urlparse
+import re
 
 
 class LbcSpider(scrapy.Spider):
@@ -37,22 +39,31 @@ class LbcSpider(scrapy.Spider):
        yield scrapy.Request(next_url ,callback=self.parse)
 
 
-    def parse_page_loader(self, response):
-        #l = ItemLoader(item=LeboncoinItem(), response=response)
-        l.add_xpath('title', '/html/body/div/div[2]/div/div[3]/div/div[1]/div[1]/h1/text()')
-        l.add_xpath('content', '/html/body/div/div[2]/div/div[3]/div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]/div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()')
-        #l.add_value('last_updated', 'today') # you can also use literal values
-        return l.load_item()
+    def get_id(self, url):
+        print(url)
+        parse_result = urlparse(url)
+        tmp = parse_result.path
+        tmp = tmp.split("/")[-1]
+        id = tmp.split(".htm")[0]
+        return int(id)
+
+    def get_id_v2(self, url):
+        #pattern = r"(\d{9})"
+        pattern = r"^http://www.leboncoin.fr/.{,100}(\d{9})\.htm.{,50}$"
+        m = re.search(pattern, url)
+        id = m.group(1)
+        return int(id)
+
+
+
+
 
     def parse_page(self, response):
        lbc_page = LeboncoinItem()
 
-
-
        lbc_page['doc_category'] = response.url.split("/")[3]
-       lbc_page['doc_id'] = int(response.url.split("/")[-1].split(".htm")[0])
+       lbc_page['doc_id'] = self.get_id_v2(response.url)
        lbc_page['doc_url'] = response.url
-
 
        content = response.xpath('/html/body/div/div[2]/div/div[3]')
 
