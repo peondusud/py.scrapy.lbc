@@ -15,10 +15,14 @@ class LbcSpider(scrapy.Spider):
     name = "lbc_old_v2"
     allowed_domains = ["leboncoin.fr"]
     start_urls = (
-        'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/',
-        #'http://www.leboncoin.fr/_immobilier_/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/', #all ads
+        #'http://www.leboncoin.fr/voitures/offres/ile_de_france/occasions/',
+        'http://www.leboncoin.fr/ventes_immobilieres/offres/ile_de_france/',
         #'http://www.leboncoin.fr/_multimedia_/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/informatique/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/image_son/offres/ile_de_france/occasions/',
         #'http://www.leboncoin.fr/ameublement/offres/ile_de_france/occasions/',
+        #'http://www.leboncoin.fr/electromenager/offres/ile_de_france/occasions/',
     )
 
     def __init__(self, *args, **kwargs):
@@ -31,16 +35,20 @@ class LbcSpider(scrapy.Spider):
 
 
     def parse(self, response):
-
-       urls = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]//a/@href').extract()
+        
+       content = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]')
+       urls = content.xpath('div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]/a/@href').extract()
        for doc_url in urls:
+           #print("doc_url", doc_url)
            #yield scrapy.Request(doc_url,callback=self.parse_page_loader)
            yield scrapy.Request(doc_url,callback=self.parse_page)
 
-       nex = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li[@class="page"]')
-       next_url = nex.xpath('a/@href').extract()[-1]
+       page_urls = content.xpath('nav/ul[@id="paging"]//li[@class="page"]/a/@href').extract()
+       next_url = page_urls[-1]
        nb_page = next_url.split("?o=")[-1]
-       last_page = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]/nav/ul[@id="paging"]//li/a/@href').extract()[-1].split("?o=")[-1]
+       last_page = content.xpath('nav/ul[@id="paging"]//li/a/@href').extract()
+       last_page = last_page[-1]
+       last_page = last_page.split("?o=")[-1]
        if nb_page == last_page:
             raise CloseSpider('End - Done') #must close spider
 
@@ -87,7 +95,20 @@ class LbcSpider(scrapy.Spider):
         for key, val in monthDict.items():
             if key == t['month']:
                 t['month'] = val
-        d = datetime(date.today().year, t['month'], int(t['day']), int(t['hour']), int(t['minute']) )
+        now = date.today()
+        year = now.year
+        month = int(t['month'])
+        day = int(t['day'])
+        hour =  int(t['hour'])
+        minute = int(t['minute'])
+
+        date_tmp = date(year, month, day)
+        #prevent to have ad in future date parse in january with ad date in december
+        if date_tmp > now: 
+            #set previous year
+            year = year - 1
+        d = datetime(year, month, day, hour, minute)
+        
         #TODO strformat
         return d
 
@@ -120,7 +141,11 @@ class LbcSpider(scrapy.Spider):
        content = response.xpath('/html/body/div/div[2]/div/div[3]')
 
        #titre
-       lbc_page['title'] = content.xpath('div/div[1]/div[1]/h1/text()').extract()[0]
+       lbc_page['title'] = content.xpath('div/div[1]/div[1]/h1/text()').extract()
+       try:
+           lbc_page['title'] = lbc_page['title'][0]
+       except IndexError:
+           print("BUG title doc_url", lbc_page['doc_url'])
 
        content2 = content.xpath('div[@class="content-color"]/div[@class="lbcContainer"]/div[@class="colRight"]')
 

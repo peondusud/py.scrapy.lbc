@@ -17,6 +17,26 @@ EXTENSIONS = {
     'scrapy.extensions.closespider.CloseSpider': 500
 }
 
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': None,
+    'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware': None,
+    'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': None,
+    'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': None
+    #'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    #'leboncoin.middlewares.CustomHttpProxyMiddleware': 300,
+    #'leboncoin.middlewares.RandomUserAgentMiddleware': 300
+}
+
+SPIDER_MIDDLEWARES = {
+    'scrapy.spidermiddlewares.urllength.UrlLengthMiddleware': None
+}
+
+
+ITEM_PIPELINES = {
+    #'leboncoin.pipelines.JsonLinesWithEncodingPipeline': 300,
+}
+
+
 #Maximum number of concurrent items (per response) to process in parallel in the Item Processor
 CONCURRENT_ITEMS = 100
 
@@ -26,7 +46,7 @@ CONCURRENT_REQUESTS = 16
 CONCURRENT_REQUESTS_PER_DOMAIN = 8
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'leboncoin (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'
 
 
 # http://doc.scrapy.org/en/latest/topics/feed-exports.html#storage-uri-parameters
@@ -37,9 +57,8 @@ FEED_FORMAT = 'jsonlines'
 #The maximum limit for Twisted Reactor thread pool size. This is common multi-purpose thread pool used by various Scrapy components.
 REACTOR_THREADPOOL_MAXSIZE = 10
 
-#DOWNLOADER_MIDDLEWARES
 DOWNLOADER_STATS = True
-#DOWNLOAD_DELAY = 0.25    # 250 ms of delay
+#DOWNLOAD_DELAY = 1  
 RANDOMIZE_DOWNLOAD_DELAY = True
 DOWNLOAD_TIMEOUT = 180
 AUTOTHROTTLE_ENABLED = False
@@ -66,5 +85,3 @@ TELNETCONSOLE_PORT = [6023, 6073]
 
 
 COOKIES_ENABLED = False
-"""
-"""
