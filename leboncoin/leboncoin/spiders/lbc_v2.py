@@ -8,12 +8,18 @@ from scrapy.exceptions import CloseSpider
 from leboncoin.items import LeboncoinItem
 from urlparse import urlparse, parse_qs
 from datetime import date, datetime
+import time
 import re
 
 
 class LbcSpider(scrapy.Spider):
-    name = "lbc_old_v2"
+    name = "lbc_v2"
     allowed_domains = ["leboncoin.fr"]
+    DATE_FORMAT = "%Y-%m-%d"
+    TIME_FORMAT = "%H:%M:%S"
+    DATETIME_FORMAT = u" ".join((DATE_FORMAT, TIME_FORMAT))
+
+
     start_urls = (
         #'http://www.leboncoin.fr/annonces/offres/ile_de_france/occasions/', #all ads
         #'http://www.leboncoin.fr/voitures/offres/ile_de_france/occasions/',
@@ -31,13 +37,16 @@ class LbcSpider(scrapy.Spider):
         self.doc_id_pattern = re.compile(ur"^http://www.leboncoin.fr/.{0,100}(?P<id>\d{9})\.htm.{0,50}$")
         self.uploader_id_pattern = re.compile(ur"^http.{0,50}(?P<id>\d{9,12})$")
         self.criteria_pattern = re.compile(ur'^\s{2}(?P<key>\w+) : "(?P<val>\w+)",?', re.MULTILINE)
+        self.nb_page = 0
+        self.nb_doc = 0
         super(LbcSpider, self).__init__(*args, **kwargs)
 
 
     def parse(self, response):
-        
+
        content = response.xpath('/html/body/div[@id="page_align"]/div[@id="page_width"]/div[@id="ContainerMain"]')
        urls = content.xpath('div[@class="content-border list"]/div[@class="content-color"]/div[@class="list-lbc"]/a/@href').extract()
+       self.nb_doc = len(urls)
        for doc_url in urls:
            #print("doc_url", doc_url)
            #yield scrapy.Request(doc_url,callback=self.parse_page_loader)
@@ -47,11 +56,13 @@ class LbcSpider(scrapy.Spider):
        next_url = page_urls[-1]
        nb_page = next_url.split("?o=")[-1]
        last_page = content.xpath('nav/ul[@id="paging"]//li/a/@href').extract()
-       last_page = last_page[-1]
-       last_page = last_page.split("?o=")[-1]
+       last_page = last_page[-1].split("?o=")[-1]
        if nb_page == last_page:
-            raise CloseSpider('End - Done') #must close spider
-
+           while True:
+               if self.nb_doc == 0:
+                   raise CloseSpider('End - Done') #must close spider
+               time.sleep(1)
+       self.nb_page += 1
        yield scrapy.Request(next_url ,callback=self.parse)
 
     def proper_url(self, url):
@@ -91,35 +102,51 @@ class LbcSpider(scrapy.Spider):
     def get_date(self, str):
         text = u''.join(str)
         t = re.search(self.date_pattern, text).groupdict()
-        monthDict={u'janvier' :1 ,  u'février': 2, u'mars': 3 ,  u'avril': 4, u'mai': 5 , u'juin': 6 , u'juillet': 7 , u'août': 8, u'septembre': 9, u'octobre': 10, u'novembre': 11 , u'décembre': 12 }
-        for key, val in monthDict.items():
-            if key == t['month']:
-                t['month'] = val
-        now = date.today()
-        year = now.year
-        month = int(t['month'])
-        day = int(t['day'])
-        hour =  int(t['hour'])
-        minute = int(t['minute'])
+        monthDict = {
+                        u'janvier': 1,
+                        u'février': 2,
+                        u'mars': 3 ,
+                        u'avril': 4,
+                        u'mai': 5,
+                        u'juin': 6,
+                        u'juillet': 7,
+                        u'août': 8,
+                        u'septembre': 9,
+                        u'octobre': 10,
+                        u'novembre': 11,
+                        u'décembre': 12
+                    }
+        if t is not None:
+            for key, val in monthDict.items():
+                if key == t['month']:
+                    t['month'] = val
+            now = date.today()
+            year   = now.year
+            month  = int(t['month'])
+            day    = int(t['day'])
+            hour   = int(t['hour'])
+            minute = int(t['minute'])
 
-        date_tmp = date(year, month, day)
-        #prevent to have ad in future date parse in january with ad date in december
-        if date_tmp > now: 
-            #set previous year
-            year = year - 1
-        d = datetime(year, month, day, hour, minute)
-        
-        #TODO strformat
-        return d
+            date_tmp = date(year, month, day)
+            #Prevent to have ads in future date
+            #Example if parsed in january with an ads date in december
+            if date_tmp > now:
+                #set previous year
+                year -= 1
+            d = datetime(year, month, day, hour, minute)
+
+            date_str = d.strftime(self.DATETIME_FORMAT)
+            return date_str
+        return ""
 
 
-    def proper_thumbs_url(self, lst):
-        ret = list()
-        for elem in lst:
+    def proper_thumbs_url(self, urls):
+        thumb_urls = list()
+        for elem in urls:
             m = re.search(self.thumb_pattern, elem)
             if m is not None:
-                ret.append( m.group('url') )
-        return ret
+                thumb_urls.append(m.group('url'))
+        return thumb_urls
 
     def jsVar_2_pyDic(self, criterias):
         return dict(re.findall(self.criteria_pattern,criterias))
@@ -130,8 +157,6 @@ class LbcSpider(scrapy.Spider):
         #str = str.replace("\n","")
         #str = str.replace("  ","")
         return str
-
-
 
     def parse_page(self, response):
        lbc_page = LeboncoinItem()
@@ -162,7 +187,7 @@ class LbcSpider(scrapy.Spider):
 
        text = u''.join(upload.xpath('text()').extract())
        lbc_page['upload_date'] = self.get_date(text)
-       lbc_page['check_date'] = datetime.now()
+       lbc_page['check_date'] = datetime.now().strftime(self.DATETIME_FORMAT)
 
 
        #lbc_page['urgent'] = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="lbcParams withborder"]/div[@class="floatLeft"]/table[1]/tbody/tr[@class="price"]/td/span[@class="urgent"]/text()').extract()
@@ -195,4 +220,5 @@ class LbcSpider(scrapy.Spider):
        description  = content2.xpath('div[@class="lbcParamsContainer floatLeft"]/div[@class="AdviewContent"]/div[@class="content"]/text()').extract()
        lbc_page['desc'] = self.proper_description(description)
 
+       self.nb_page -= 1 #decrement cnt usefull for stop spider
        return lbc_page

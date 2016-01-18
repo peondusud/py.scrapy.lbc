@@ -55,9 +55,6 @@ class LbcSpider(scrapy.Spider):
         return int(id)
 
 
-
-
-
     def parse_page(self, response):
        lbc_page = LeboncoinItem()
 
