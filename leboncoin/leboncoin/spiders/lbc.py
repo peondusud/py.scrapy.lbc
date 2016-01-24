@@ -116,7 +116,7 @@ class LbcSpider(scrapy.Spider):
         m = re.search(self.doc_id_pattern, url)
         if m is not None:
             return int(m.group('id'))
-        return url
+        return None
 
     def get_uploader_id(self, url):
         parse_result = urlparse(url)
@@ -191,6 +191,7 @@ class LbcSpider(scrapy.Spider):
        lbc_page = LeboncoinItem()
        self.logger.debug("page nb doc", self.nb_doc, response.url)
        lbc_page['doc_url'] = self.proper_url(response.url)
+       lbc_page['doc_id'] = self.get_id_regex(lbc_page['doc_url'])
 
        content = response.xpath('/html/body/div/div[2]/div/div[3]')
 
