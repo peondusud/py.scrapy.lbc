@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Scrapy settings for leboncoin project
-#     http://doc.scrapy.org/en/latest/topics/settings.html
-#
-
 BOT_NAME = 'lbc_bot'
 
 SPIDER_MODULES = ['leboncoin.spiders']
@@ -31,31 +27,30 @@ SPIDER_MIDDLEWARES = {
     'scrapy.spidermiddlewares.urllength.UrlLengthMiddleware': None
 }
 
-
 ITEM_PIPELINES = {
+    #'leboncoin.pipelines.ElasticsearchBulkUpdatePipeline': 200,
+    #'leboncoin.pipelines.ElasticsearchBulkIndexPipeline': 200,
     'leboncoin.pipelines.JsonLinesWithEncodingPipeline': 300,
 }
 
+ES_HOST = "192.168.1.49"
+ES_PORT = 9200
+ES_URL_PREFIX = ''
+#ES_BULK_SIZE = 200
 
 #Maximum number of concurrent items (per response) to process in parallel in the Item Processor
 CONCURRENT_ITEMS = 100
 
 #The maximum number of concurrent (ie. simultaneous) requests that will be performed by the Scrapy downloader.
 CONCURRENT_REQUESTS = 16
-
 CONCURRENT_REQUESTS_PER_DOMAIN = 8
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'
 
-
-# http://doc.scrapy.org/en/latest/topics/feed-exports.html#storage-uri-parameters
-#FEED_URI = 'dump_%(name)s/%(time)s.json%'
 #FEED_URI = 'dump_lbc.json'
 #FEED_FORMAT = 'jsonlines'
-FEED_URI_PREFIX = 'dump_lbc'
-#FEED_URI_PREFIX = 'dump_lbc_%(name)s'
 
+FEED_URI_PREFIX = 'dump_lbc'
 
 #The maximum limit for Twisted Reactor thread pool size. This is common multi-purpose thread pool used by various Scrapy components.
 REACTOR_THREADPOOL_MAXSIZE = 10

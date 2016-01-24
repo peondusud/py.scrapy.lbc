@@ -25,6 +25,15 @@ tmplt = """
           "index": "not_analyzed",
           "include_in_all": false
         },
+        "user_id": {
+          "type": "integer",
+          "include_in_all": false
+        },
+        "user_url": {
+          "type": "string",
+          "index": "not_analyzed",
+          "include_in_all": false
+        },
         "title": {
           "type": "string",
           "index": "analyzed",
@@ -45,6 +54,10 @@ tmplt = """
           "index": "not_analyzed",
           "include_in_all": false
         },
+        "doc_id": {
+          "type": "integer",
+          "include_in_all": false
+        }
         "location": {
           "type": "geo_point",
           "include_in_all": false
@@ -302,12 +315,12 @@ tmplt = """
         },
         "upload_date": {
           "type": "date",
-          "format": "yyyy-MM-dd HH:mm:ss",
+          "format": "yyyy.MM.dd HH:mm:ss",
           "include_in_all": false
         },
         "check_date": {
           "type": "date",
-          "format": "yyyy-MM-dd HH:mm:ss",
+          "format": "yyyy.MM.dd HH:mm:ss",
           "include_in_all": false
         },
         "addr_locality": {
@@ -336,8 +349,21 @@ def proper_encode_with_index(json_str):
     proper_encode = loads(json_str)
     #proper_encode["check_date"]
     index_date = proper_encode["upload_date"][:10]
-    #"lbc-" + datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d")
+    #"index_date = datetime.datetime.strptime(proper_encode["upload_date"], "%Y-%m-%d %H:%M:%S").strftime("%Y.%m.%d")
     return '{"index": {"_index": "lbc-' + index_date + '", "_type": "lbc"}}\n' + dumps(proper_encode)
+
+def index_action(json_str):
+    proper_encode = loads(json_str)
+    #proper_encode["check_date"]
+    index_date = proper_encode["upload_date"][:10]
+    #"index_date = datetime.datetime.strptime(proper_encode["upload_date"], "%Y-%m-%d %H:%M:%S").strftime("%Y.%m.%d")
+    action = { '_op_type': 'index',
+                'index': "lbc-" +index_date,
+                'doc_type': 'lbc',
+                'data': dumps(proper_encode)
+        }
+    return action
+
 
 if __name__ == '__main__':
     fmt = '%(asctime)-15s [%(levelname)s] [%(module)s>%(funcName)s] %(message)s'
@@ -351,7 +377,7 @@ if __name__ == '__main__':
                         {'host': '192.168.1.49'}
                         ])
 
-    #es.put_template( id='lbc', body=dumps(loads(tmplt)) ) #, op_type='create'
+    #es.indices.put_template( id='lbc', body=dumps(loads(tmplt)) ) #, op_type='create'
 
 
     with open('dump_lbc.json', 'r') as fd:
