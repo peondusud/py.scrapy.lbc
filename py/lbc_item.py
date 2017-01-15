@@ -8,7 +8,8 @@ import logging
 import json
 import re
 from collections import namedtuple
-from lxml import etree
+from lxml import etree, html
+
 
 Document_Identifier = namedtuple( "Document_Identifier", [ "doc_url", "ad", "subcat" ])
 Document_subcategory = namedtuple( "Document_subcategory", [ "subcat", "titre", "region", "img_urls", "desc" ])
@@ -346,63 +347,43 @@ class LeboncoinItem():
     def json_it(self):
         return json.dumps( self._dict )
 
-#################################################################################################################
-
-"""
-Document_subcategory = namedtuple("Document_subcategory", ["subcat", "pro_flag", "announcement_type"])
-Document_Localisation = namedtuple("Document_Localisation", ["region", "department", "zip_code", "town", "location"])
-Document_Uploader = namedtuple("Document_Uploader", ["uploader_name", "uploader_url", "uploader_id", "uploader_pro_siren"])
-Document_subcategory_Criterias = namedtuple("Document_Criterias", ["criterias_dict" ]) #FIXME give dict() <====
-Document_Announcement = namedtuple("Document_Announcement", ["titre", "description", "price", "price_currency", "img_urls", "upload_date", "urgent", "doc_url", "ad" ])
-
-
-def  document_subcategory_factory(tree):
-    subcat = ""
-    pro_flag = ""
-    announcement_type = ""
-    return Document_subcategory( subcat, pro_flag, announcement_type)
-
-def  document_Localisation_factory(tree):
-    region = ""
-    department = ""
-    zip_code = ""
-    return Document_Localisation( region, department, zip_code, town,location)
-
-
-def  document_Uploader_factory(tree):
-    uploader_name = ""
-    uploader_url = ""
-    announcement_type = ""
-    return Document_Uploader( uploader_name, uploader_url, uploader_id, uploader_pro_siren )
-
-def  document_subcategory_Criterias_factory(tree):
-    pass
-    criterias_dict = {}
-    return Document_Criterias( criterias_dict )
-
-def  document_subcategory_Criterias_factory(tree):
-    pass
-    titre= ""
-    description= ""
-    price= ""
-    price_currency= ""
-    img_urls= ""
-    upload_date= ""
-    urgent= ""
-    doc_url= ""
-    ad
-    return Document_Announcement( titre, description, price, price_currency, img_urls, upload_date, urgent, doc_url, ad )
-
-class LeboncoinItem2():
+class LeboncoinItem_v2():
 
     def __init__(self, url, tree):
+        self._logger = logging.getLogger(__name__)
+       
+       
+    def get(url, page_body):   
+        tree =  html.parse(page_body)  
+        document_Identifier = document_identifier_factory( url )
+        document_subcategory = document_subcategory_factory( tree )
+        document_Uploader = document_uploader_factory( tree )
+        document_Localisation = document_localisation_factory( tree )
+        document_Price = document_price_factory( tree )
+        document_Criterias = document_criterias_factory( tree )
+        document_Criterias_from_js = document_criterias_factory_from_js( tree )
 
-        self._document_subcategory = document_subcategory_factory(tree)
-        self._document_Localisation = document_Localisation_factory(tree)
-        self._document_Uploader = document_Uploader_factory(tree)
-        self._document_subcategory_Criterias = document_subcategory_Criterias_factory(tree)
-        self._document_Announcement = document_Announcement_factory(tree)
+        dic =  dict( document_Identifier.__dict__ )
+        dic.update( dict( document_subcategory.__dict__) )
+        dic.update( dict( document_Uploader.__dict__) )
+        dic.update( dict( document_Localisation.__dict__) )
+        dic.update( dict( document_Price.__dict__) )
 
-        def json_it(self):
-            return None
-"""
+        #return only the values (containing a dict)
+        dic.update( dict( document_Criterias.__dict__["criterias_dict"]) )
+        dic.update( dict( document_Criterias_from_js.__dict__["criterias_js_dict"]) )
+   
+        self.remove_blank(dic)
+
+        return dic
+
+
+    @staticmethod
+    def remove_blank(dic):
+        for key, val in dic.items():
+            if val is '':
+                try:
+                    dic.pop(key)
+                except KeyError:
+                    pass
+
